@@ -1,0 +1,50 @@
+name: safety-tests
+
+# A deliberately small, deterministic subset of the full test suite: the
+# tests that verify this app's actual safety/security guarantees, runnable
+# with no live model, no GPU, and no network access. Meant to reassure a
+# downloader or contributor that these specific guarantees are real and
+# checked on every push — not a substitute for the full suite.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --group dev --all-packages --extra web
+
+      - name: Zero Secrets Policy (gitleaks)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks detect --redact --no-banner
+
+      - name: REUSE licence compliance
+        run: uv run --with reuse reuse lint
+
+      - name: Content-preservation guards actually reject bad edits
+        run: uv run pytest -q apps/artifice-ocr/tests/test_guard.py
+
+      - name: Approved-folder / path-sandbox enforcement
+        run: uv run pytest -q apps/artifice-ocr/tests/test_approved_folders.py
+
+      - name: Config security (no secrets in persisted settings, etc.)
+        run: uv run pytest -q apps/artifice-ocr/tests/test_config_security.py
+
+      - name: Shared path-validation sandbox (packages/shared-ui)
+        run: uv run pytest -q packages/shared-ui/tests/test_path_validation.py
