@@ -1,0 +1,5 @@
+# OCR pipeline output — generated per-run from source documents, not source
+# code itself. Default output_dir is "output"; test_output/ is a leftover
+# manual-run artifact of the same kind.
+/output/
+/test_output/

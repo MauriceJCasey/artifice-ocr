@@ -1,0 +1,264 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* masthead.css — Shared top-navigation bar for the Artifice Suite.
+ *
+ * Accompanies the _masthead.html Jinja partial
+ * (packages/shared-ui/shared_ui/templates/_masthead.html).  Both ship
+ * together in the shared-ui package and are loaded by each app that
+ * includes the masthead partial.
+ *
+ * Every value below comes from an existing canonical design token
+ * (tokens.css).  Per-app accent identity (--accent, --accent-deep,
+ * --accent-wash) is inherited through the cascade from the host app's
+ * stylesheet — none is declared here.
+ */
+
+/* ── Top Navigation (.topnav) ─────────────────────────────────────────── */
+
+.topnav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: var(--space-7);
+  height: var(--nav-height);
+  padding: 0 var(--space-6);
+  background-color: color-mix(in srgb, var(--paper-raised) 96%, transparent);
+  border-bottom: 1px solid var(--rule);
+  box-shadow: var(--shadow-nav);
+}
+
+/* The topnav is position:fixed and taken out of flow, so the page body
+ * must reserve the vertical space the nav occupies.  This lives here — not
+ * in per-app stylesheets — so every app that loads masthead.css is correct
+ * by construction. */
+body {
+  padding-top: var(--nav-height);
+}
+
+@media (min-width: 700px) {
+  .topnav {
+    backdrop-filter: blur(12px) saturate(1.1);
+  }
+}
+
+/* ── Brand wordmark ───────────────────────────────────────────────────── */
+
+/* The wordmark and its optional tagline are one typographic unit — a
+ * kicker caption attached to a headline, not a second independent nav
+ * item — so they get their own tight internal gap and share a text
+ * baseline, instead of inheriting .topnav's wider inter-item gap
+ * (--space-7) and its center alignment, both of which are correct
+ * between *unrelated* elements (brand vs. nav links vs. theme toggle)
+ * but read as the tagline drifting loose from the word it belongs to.
+ * Design_Philosophy.md §8.5 documents the wordmark as "three parts:
+ * .brand … .navlinks … nav-theme" with the tagline folded into the
+ * first part, not a fourth — this group makes that literal. */
+.brand-group {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-accent {
+  color: var(--accent);
+}
+
+/* ── Tagline ──────────────────────────────────────────────────────────── */
+
+/* Subordinate to .brand by three independent typographic signals — small
+ * label size vs. the wordmark's display size, muted ink-soft vs. ink,
+ * and label-case/tracking vs. the wordmark's sentence-case serif — so the
+ * hierarchy holds even in a screen reader or a print of the page, not
+ * only by proximity. */
+.brand-tagline {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* ── Nav links ────────────────────────────────────────────────────────── */
+
+.navlinks {
+  display: flex;
+  gap: var(--space-5);
+  flex: 1;
+}
+
+.navlinks a {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: var(--space-2) 0;
+  position: relative;
+  transition: color var(--duration-fast) ease;
+}
+
+.navlinks a::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%; height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform var(--duration-fast) var(--ease-primary);
+}
+
+.navlinks a:hover {
+  color: var(--accent-deep);
+}
+
+.navlinks a:hover::after {
+  transform: scaleX(1);
+}
+
+.navlinks a[aria-current="page"] {
+  color: var(--accent-deep);
+}
+
+.navlinks a[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* ── Theme toggle ─────────────────────────────────────────────────────── */
+
+/* WCAG 2.5.5: the theme toggle must meet the 44px minimum target size
+   (--control-height).  height + min-width produce a square hit target;
+   inline-flex centres the glyph. */
+
+.nav-theme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  min-width: var(--control-height);
+  background: none;
+  border: 1px solid var(--rule-dark);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  cursor: pointer;
+  color: var(--ink);
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+              border-color var(--duration-fast) ease;
+}
+
+.nav-theme:hover {
+  background-color: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+/* ── PyWebView drag region (frameless window title bar) ───────────────── */
+
+/* The nav itself becomes the draggable title bar in frameless PyWebView
+ * windows.  Interactive children are explicitly excluded so links and
+ * buttons keep working; the CSS -webkit-app-region fallback matches the
+ * class convention pywebview uses internally. */
+.pywebview-drag-region {
+  -webkit-app-region: drag;
+}
+
+.pywebview-drag-region-exclude {
+  -webkit-app-region: no-drag;
+}
+
+/* ── Window controls (frameless PyWebView only) ───────────────────────── */
+
+/* Hidden by default; the window-controls.js IIFE adds .pywebview-active to
+ * <html> once the pywebviewready event fires, revealing these buttons. */
+.window-controls {
+  display: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pywebview-active .window-controls {
+  display: inline-flex;
+}
+
+.window-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  min-width: var(--control-height);
+  background: none;
+  border: 1px solid var(--rule-dark);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  cursor: pointer;
+  color: var(--ink);
+  transition: background-color var(--duration-fast) ease,
+              border-color var(--duration-fast) ease,
+              color var(--duration-fast) ease;
+}
+
+.window-control:hover {
+  background-color: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+/* Destructive action: a muted warm-red wash rather than a cold, jarring red. */
+.window-control-close:hover {
+  background-color: color-mix(in srgb, var(--error) 12%, transparent);
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.window-control svg {
+  display: block;
+  pointer-events: none;
+}
+
+/* Bottom-right resize grip for the frameless native window. Hidden in a normal
+ * browser; revealed (like the window controls) once pywebviewready fires and
+ * window-controls.js adds .pywebview-active to <html> and injects the element.
+ * Drives WindowApi.resize() — see window-controls.js. */
+.window-resize-grip {
+  display: none;
+}
+
+.pywebview-active .window-resize-grip {
+  display: block;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  width: 1rem;
+  height: 1rem;
+  cursor: nwse-resize;
+  z-index: 900; /* above app chrome; below full-screen modal backdrops */
+  opacity: 0.45;
+  /* Two diagonal ink strokes — a conventional grip, drawn from a token colour
+   * rather than a hardcoded one. */
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 3px,
+    var(--ink-faint) 3px 4px
+  );
+}
+
+.window-resize-grip:hover {
+  opacity: 0.85;
+}

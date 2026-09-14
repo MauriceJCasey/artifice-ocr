@@ -1,0 +1,89 @@
+<!-- SPDX-FileCopyrightText: 2026 Maurice Casey
+   -
+   - SPDX-License-Identifier: AGPL-3.0-or-later
+  -->
+
+{# ── Contract ──────────────────────────────────────────────────────────
+   #
+   #  Variables expected by this partial:
+   #
+   #    brand_accent       (str, required)  App-specific word displayed after
+   #                                        “Artifice”. Examples: “Graph”,
+   #                                        “Draft”, “OCR”, “Transcribe”.
+   #
+   #    brand_tagline      (str, optional)  Short descriptor line rendered
+   #                                        beside the brand wordmark.
+   #                                        Omitted when empty/missing.
+   #
+   #    nav_items          (list, required) Navigation links. Each item is a dict:
+   #                               • href  (str) : link target
+   #                               • label (str) : display text
+   #                               • key   (str) : identifier matched against
+   #                                              active_tab to set aria-current
+   #
+   #    active_tab         (str, required)  The `key` of the currently-active
+   #                               nav item, or an empty string if none is
+   #                               active.
+   #
+   #    show_theme_toggle  (bool, required) Whether to render the theme
+   #                               toggle button. The included app must
+   #                               supply its own <script> to wire the
+   #                               toggle, because the toggle state is
+   #                               per-app localStorage keyed.
+   #
+   #    asset_v            (int, required)  Cache-busting version for linked
+   #                                        assets.
+   #
+   #  The entire masthead is inside a <nav class="topnav"> so the surrounding
+   #  page only needs to render this include inside a <body>, after the skip
+   #  link and before the main content block.
+   #
+   #  Styling is minimal and token-driven. Visual design belongs to ui-ux.
+   #
+   #  #navByom (unconditional, unlike the theme toggle below it — draft sets
+   #  show_theme_toggle: False and must still get this control) reopens the
+   #  BYOM screen via ArtificeByom.autostart()/.open() in byom.js, which
+   #  looks the element up by ID and wires it itself; no per-app script is
+   #  needed here. artifice-graph does not include this partial (its own
+   #  inline <nav class="topnav"> in base.html carries the identical markup)
+   #  — keep the two in sync by hand, including the pywebview drag-region
+   #  classes and the window-controls script tag below.
+   ───────────────────────────────────────────────────────────────────── #}
+
+<nav class="topnav pywebview-drag-region">
+  <div class="brand-group">
+    <a class="brand pywebview-drag-region-exclude" href="/">Artifice<span class="brand-accent">{{ brand_accent }}</span></a>
+    {%- if brand_tagline %}
+    <span class="brand-tagline">{{ brand_tagline }}</span>
+    {%- endif %}
+  </div>
+  <div class="navlinks">
+  {%- for item in nav_items %}
+    <a class="pywebview-drag-region-exclude" href="{{ item.href }}"
+       {%- if item.key == active_tab %} aria-current="page"{% endif -%}
+    >{{ item.label }}</a>
+  {%- endfor %}
+  </div>
+  <button type="button" class="nav-byom pywebview-drag-region-exclude" id="navByom" aria-haspopup="dialog" aria-label="Connect a local model">
+    <span class="nav-byom-dot" id="navByomDot" aria-hidden="true"></span>
+    <span class="nav-byom-label">Model</span>
+  </button>
+  {%- if show_theme_toggle %}
+  <button type="button" class="nav-theme pywebview-drag-region-exclude" id="themeToggle" aria-label="Toggle colour theme">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="themeGlyph"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <span class="sr-only">Theme</span>
+  </button>
+  {%- endif %}
+  <div class="window-controls" aria-label="Window controls">
+    <button type="button" class="window-control window-control-minimize" id="windowMinimize" aria-label="Minimize">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/></svg>
+    </button>
+    <button type="button" class="window-control window-control-maximize" id="windowMaximize" aria-label="Maximize">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>
+    </button>
+    <button type="button" class="window-control window-control-close" id="windowClose" aria-label="Close">
+      <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</nav>
+<script src="/shared/window-controls.js?v={{ asset_v }}"></script>

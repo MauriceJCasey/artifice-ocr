@@ -1,0 +1,53 @@
+# OCR Pipeline configuration
+# Copy this file to configs/default.yaml to use as the active config.
+# Environment variables override these values.
+
+# LM Studio (OCR backend)
+lm_studio_url: "http://localhost:1234/v1"
+
+# Models
+#
+# The app is model-agnostic and ships these EMPTY — nothing is preselected, so
+# it never silently uses a model you did not choose. The values below are the
+# suite's recommendations, taken from model_harness.registry, which prefers
+# open provenance: a model whose training data cannot be inspected cannot be
+# cited honestly in a methods section.
+ocr_model: "richardyoung/olmocr2:7b-q8"   # via Ollama — Allen AI olmOCR-2
+cleanup_model: "aya-expanse:8b"           # via Ollama
+translate_model: "aya-expanse:8b"         # via Ollama
+
+# Paths
+output_dir: "output"
+
+# Options
+translate_enabled: true
+
+# Batch processing
+resume: true                # skip stages if output already exists
+max_ocr_workers: 2          # concurrent OCR requests to LM Studio
+
+# Throughput
+# Reasoning models emit a chain-of-thought block before
+# answering. On mechanical OCR cleanup that is pure overhead: measured on a real
+# archival page, 7,664 tokens generated for 442 tokens of output — about 13x the
+# wall-clock time, for output that was no better. Leave this false unless you
+# swap in a model whose reasoning you actually want.
+ollama_think: false
+
+# Hard ceiling on tokens generated per call (null = no cap). A runaway guard.
+# Leave unset unless you have actually seen one: a cap that bites truncates the
+# document silently.
+max_output_tokens: null
+
+# Content-preservation guard for the structure stage. When the model's output
+# has altered any word, the original text is kept instead, so a page is either
+# structured or untouched — never reworded.
+structure_guard: true
+
+# Degeneracy guard for the OCR stage. Rejects raw OCR output where the model
+# looped, repeating the same line (or a short cycle of lines) over and over
+# instead of transcribing — seen on a page given no genuine content to read
+# (an upside-down scan). There is no fallback text for OCR, so a rejection
+# fails the item outright rather than writing the loop to raw_ocr/ as if it
+# were real.
+ocr_repetition_guard: true

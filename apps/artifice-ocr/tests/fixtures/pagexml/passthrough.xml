@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<PcGts xmlns="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15/pagecontent.xsd" pcGtsId="page-scan-001">
+  <Metadata>
+    <Creator>Artifice</Creator>
+    <Created>2026-09-14T10:30:00Z</Created>
+    <LastChange>2026-09-14T10:30:00Z</LastChange>
+    <MetadataItem type="processingStep" name="ocr" value="{&quot;backend&quot;:&quot;ollama&quot;,&quot;model&quot;:&quot;olmocr2&quot;}" date="2026-09-14T10:30:00Z" />
+  </Metadata>
+  <Page imageFilename="scan-001.png" imageWidth="1200" imageHeight="1800">
+    <ReadingOrder>
+      <OrderedGroup id="reading-order">
+        <RegionRefIndexed index="0" regionRef="region-001" />
+      </OrderedGroup>
+    </ReadingOrder>
+    <TextRegion id="region-001" type="paragraph" custom="structure {type:unclassified;}">
+      <Coords points="0,0 1200,0 1200,1800 0,1800" />
+      <TextEquiv index="0">
+        <Unicode>Raw transcription.</Unicode>
+      </TextEquiv>
+      <TextEquiv index="1">
+        <Unicode>Cleaned transcription.</Unicode>
+      </TextEquiv>
+      <TextEquiv index="2">
+        <Unicode>Translated transcription.</Unicode>
+      </TextEquiv>
+    </TextRegion>
+  </Page>
+</PcGts>

@@ -1,0 +1,14 @@
+[project]
+name = "artifice-output-layout"
+version = "0.4.0"
+description = "Shared, human-readable output layout for the Artifice suite"
+requires-python = ">=3.11"
+license = {text = "AGPL-3.0-or-later"}
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

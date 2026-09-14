@@ -1,0 +1,82 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* The New Masses — vendored web fonts.
+   Kept separate from tokens.css: this file performs network/asset loading
+   (@font-face src fetches), while tokens.css only declares custom
+   properties. Different maintenance concern, different file.
+
+   All three families ship under packages/shared-ui/fonts/ so every app
+   inherits the same local copies — no request ever leaves the machine to
+   fonts.googleapis.com or fonts.gstatic.com. Licence: SIL Open Font
+   License 1.1 for all three families; see the OFL-*.txt files alongside
+   the fonts in this directory.
+
+   Weights/styles below match exactly what apps/artifice-graph previously
+   requested from Google Fonts (base.html, formerly line 10):
+     Archivo:wght@400;600;700
+     Libre+Baskerville:ital,wght@0,400;0,700;1,400
+     Playfair+Display:ital,wght@0,600;0,700;0,900;1,700
+
+   All five faces are variable fonts — a single file's `wght` axis covers
+   every weight requested, so one @font-face rule per style with a
+   font-weight *range* is correct and matches how a variable font is meant
+   to be served. Do not replace these with per-weight static files.
+
+   All five now ship as woff2. Playfair Display and Libre Baskerville were
+   converted from TTF on 2026-07-28 (897K -> 328K, a 63% saving); the
+   `wght` axis was verified present after conversion, since a conversion
+   that dropped it would silently break every bold weight while still
+   rendering something plausible.
+
+   The conversion needs fontTools' *Python* Brotli extension — NOT the
+   `brotli` CLI that `apt install brotli` provides. That distinction cost a
+   previous attempt: the CLI was installed, fontTools still refused, and
+   the fonts shipped as TTF. It is declared as `fonttools[woff]` in the
+   root pyproject's dev group, so `uv sync` provides it. To reconvert:
+
+     uv run python -c "from fontTools.ttLib import TTFont; \
+       f=TTFont('<in>.ttf'); f.flavor='woff2'; f.save('<out>.woff2')"
+*/
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/Archivo.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libre Baskerville";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/LibreBaskerville.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libre Baskerville";
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./fonts/LibreBaskerville-Italic.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("./fonts/PlayfairDisplay.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  font-style: italic;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("./fonts/PlayfairDisplay-Italic.woff2") format("woff2");
+}

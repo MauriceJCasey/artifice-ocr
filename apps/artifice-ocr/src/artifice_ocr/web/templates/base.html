@@ -1,0 +1,50 @@
+{# SPDX-FileCopyrightText: 2026 Maurice Casey #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+{% extends "_app_shell.html" %}
+
+{% block head %}
+  <link rel="icon" type="image/svg+xml" href="/shared/logos/artifice-ocr-mark.svg?v={{ asset_v }}">
+  <link rel="apple-touch-icon" href="/shared/logos/artifice-ocr.png">
+  <link rel="stylesheet" href="/shared/prose.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/static/css/app.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/shared/byom.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/shared/toast.css?v={{ asset_v }}">
+  {% block app_head %}{% endblock %}
+{% endblock %}
+
+{% block workspace %}<div class="app">{% block content %}{% endblock %}</div>{% endblock %}
+
+{% block inspector %}
+<p class="shell-inspector-kicker">Current document</p>
+<h2>Review context</h2>
+<p class="shell-inspector-copy">Select a queued page to inspect its scan, confidence, raw OCR, cleaned text, and translation without leaving the workspace.</p>
+<hr>
+<p class="shell-inspector-kicker">Round trip</p>
+<p class="shell-inspector-copy">Save corrections, select the finished pages in the queue, then add the chosen text stage to their original Tropy photos.</p>
+{% endblock %}
+
+{% block activity %}<p class="activity-empty">OCR stages, exports, and recoverable errors appear here while work is running.</p>{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/icons.js?v={{ asset_v }}"></script>
+<script src="/static/js/app.js?v={{ asset_v }}"></script>
+<script src="/shared/toast.js?v={{ asset_v }}"></script>
+<script src="/shared/bind.js?v={{ asset_v }}"></script>
+<script src="/static/js/palette.js?v={{ asset_v }}"></script>
+<script src="/static/js/tropy.js?v={{ asset_v }}"></script>
+<script src="/static/js/pdf_export.js?v={{ asset_v }}"></script>
+<script src="/static/js/page_export.js?v={{ asset_v }}"></script>
+<script src="/static/js/find_replace.js?v={{ asset_v }}"></script>
+<script src="/static/js/preview_image.js?v={{ asset_v }}"></script>
+<script src="/static/js/preview.js?v={{ asset_v }}"></script>
+<script src="/static/js/history.js?v={{ asset_v }}"></script>
+<script src="/static/js/settings.js?v={{ asset_v }}"></script>
+<script src="/shared/byom.js?v={{ asset_v }}"></script>
+<script>
+(function () {
+  "use strict";
+  var byom = window.ArtificeByom.autostart({ appName: "ArtificeOCR", onConfigured: function () { byom.close(); } });
+})();
+</script>
+{% block app_scripts %}{% endblock %}
+{% endblock %}

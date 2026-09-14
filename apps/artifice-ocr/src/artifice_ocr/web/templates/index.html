@@ -1,0 +1,674 @@
+<!-- SPDX-FileCopyrightText: 2026 Maurice Casey
+   -
+   - SPDX-License-Identifier: AGPL-3.0-or-later
+  -->
+
+{% extends "base.html" %}
+{% block title %}ArtificeOCR{% endblock %}
+
+{% block content %}
+
+  <nav class="tabs" aria-label="Tropy workflow">
+    <button type="button" class="tab active" data-tab="main"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><span>Source &amp; process</span></button>
+    <button type="button" class="tab" data-tab="preview"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><span>Preview</span></button>
+    <button type="button" class="tab" data-tab="history"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>History</span></button>
+    <button type="button" class="tab" data-tab="settings"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><circle cx="9" cy="6" r="1.6"/><line x1="4" y1="12" x2="20" y2="12"/><circle cx="15" cy="12" r="1.6"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="7" cy="18" r="1.6"/></svg><span>Settings</span></button>
+    <div class="spacer" style="flex:1;"></div>
+    <button type="button" class="tab" id="btn-palette-hint" title="Command Palette (Ctrl+K)" style="font-size:0.8rem; border-bottom:none; color:var(--ink-faint);">
+      <span class="kbd">Ctrl</span>+<span class="kbd">K</span>
+    </button>
+  </nav>
+
+  <div class="panels">
+
+    <ol class="workflow-rail" aria-label="Tropy round trip">
+      <li class="active" data-workflow-step="1" aria-current="step"><span>1</span><strong>Source</strong><small>Choose Tropy pages</small></li>
+      <li data-workflow-step="2"><span>2</span><strong>Process</strong><small>OCR and clean</small></li>
+      <li data-workflow-step="3"><span>3</span><strong>Review</strong><small>Edit beside the scan</small></li>
+      <li data-workflow-step="4"><span>4</span><strong>Return</strong><small>Add notes or compile</small></li>
+    </ol>
+
+    <!-- ================================================================ MAIN -->
+    <section class="panel active" id="panel-main">
+
+      <!-- Queue card -->
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head">
+          <div><p class="workspace-kicker">Tropy source</p><h2>Pages to transcribe</h2></div>
+          <span class="dim" id="queue-count">0 files</span>
+        </div>
+
+        <div class="source-primary-action">
+          <div><strong>Start from your archive</strong><span>Choose lists, items, and individual pages from a read-only Tropy project.</span></div>
+          <button type="button" class="btn accent" id="btn-add-tropy">Choose Tropy pages&hellip;</button>
+        </div>
+
+        <details class="manual-source-disclosure">
+          <summary>Or add files outside Tropy</summary>
+        <div class="dropzone" id="dropzone" tabindex="0" role="button"
+             aria-label="Drop image files here, or press Enter to browse">
+          <div class="dropzone-state" id="dropzone-idle">
+            <svg class="dropzone-icon" viewBox="0 0 24 24" width="32" height="32"
+                 fill="none" stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span class="dropzone-title">Drop image files here</span>
+            <span class="dropzone-hint" id="dropzone-hint">or click to browse</span>
+          </div>
+          <div class="dropzone-state hidden" id="dropzone-uploading">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="dropzone-title">Uploading&hellip;</span>
+          </div>
+          <div class="dropzone-state hidden" id="dropzone-success">
+            <svg class="dropzone-icon dropzone-check" viewBox="0 0 24 24" width="32" height="32"
+                 fill="none" stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span class="dropzone-title" id="dropzone-success-text">Added</span>
+          </div>
+          <div class="dropzone-state hidden" id="dropzone-error">
+            <svg class="dropzone-icon dropzone-error-icon" viewBox="0 0 24 24" width="32" height="32"
+                 fill="none" stroke="currentColor" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span class="dropzone-title" id="dropzone-error-text"></span>
+          </div>
+          <div class="dropzone-live" id="dropzone-live" aria-live="polite" aria-atomic="true"></div>
+        </div>
+        </details>
+
+        <div class="queue-wrap">
+          <table class="queue">
+            <thead>
+              <tr>
+                <th style="width:2rem;"><input type="checkbox" id="select-all-rows" title="Select all" aria-label="Select all rows"></th>
+                <th>File</th>
+                <th class="c">OCR</th>
+                <th class="c">Cleanup</th>
+                <th class="c">Title</th>
+                <th class="c">Translate</th>
+                <th class="c" title="Quality score: how confident the AI is that it read the text correctly (0–100)">Conf</th>
+                <th class="c">Time</th>
+                <th>Status</th>
+                <th class="c" style="width:2.4rem;"></th>
+              </tr>
+            </thead>
+            <tbody id="queue-body"></tbody>
+          </table>
+        </div>
+
+        <div class="toolbar">
+          <button type="button" class="btn" id="btn-browse-files">Browse files</button>
+          <button type="button" class="btn" id="btn-add-folder">Add folder</button>
+          <button type="button" class="btn danger" id="btn-remove">Remove Selected</button>
+          <button type="button" class="btn danger" id="btn-clear">Clear All</button>
+          <div class="rule-v"></div>
+          <button type="button" class="btn" id="btn-skip">Skip</button>
+          <button type="button" class="btn" id="btn-retry">Retry</button>
+          <button type="button" class="btn" id="btn-batch-correct">Batch Correct&hellip;</button>
+          <div class="spacer"></div>
+          <button type="button" class="btn" id="btn-compile-pdf">Compile PDF&hellip;</button>
+          <button type="button" class="btn" id="btn-send-tropy">Send to Tropy&hellip;</button>
+          <button type="button" class="btn" id="btn-export-page">Export PAGE&hellip;</button>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="run-row">
+          <strong style="font-size:var(--text-sm);">Stages</strong>
+          <label class="check" title="OCR is required for every new run"><input type="checkbox" id="stage-ocr" checked disabled> OCR <span class="dim">required</span></label>
+          <label class="check"><input type="checkbox" id="stage-cleanup" checked> Cleanup</label>
+          <label class="check"><input type="checkbox" id="stage-title"> Generate titles</label>
+          <label class="check"><input type="checkbox" id="stage-translate"> Translate</label>
+          <label class="check" title="Ignore existing output and OCR/clean/translate every selected file again."><input type="checkbox" id="stage-force"> Force re-run (ignore existing output)</label>
+        </div>
+
+        <div class="output-row">
+          <strong style="font-size:var(--text-sm); white-space:nowrap;">Output</strong>
+          <input type="text" id="output-dir" value="output">
+          <button type="button" class="btn" id="btn-browse-output">&hellip;</button>
+          <button type="button" class="btn accent icon-btn" id="btn-run"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg><span class="icon-btn-label">Run OCR</span></button>
+          <button type="button" class="btn icon-btn" id="btn-pause" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="5" x2="8" y2="19"/><line x1="16" y1="5" x2="16" y2="19"/></svg><span>Pause</span></button>
+          <button type="button" class="btn danger icon-btn" id="btn-stop" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="1"/></svg><span>Stop</span></button>
+        </div>
+      </div>
+
+      <!-- Monitor card -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Progress</h2>
+        </div>
+        <div class="progress-row">
+          <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+          <span class="progress-text" id="progress-value">0%</span>
+        </div>
+        <div class="log" id="log"></div>
+      </div>
+
+    </section>
+
+    <!-- ============================================================= PREVIEW -->
+    <section class="panel" id="panel-preview">
+      <div class="card compare-card compare-card--with-image">
+        <div class="image-pane" id="preview-image-pane">
+          <div class="image-toolbar">
+            <button class="btn" id="btn-image-reset" type="button" title="Reset zoom (or double-click the image)">Reset</button>
+            <div class="btn-group">
+              <button type="button" class="btn" data-fit="width" title="Fit to width">W</button>
+              <button type="button" class="btn" data-fit="height" title="Fit to height">H</button>
+              <button type="button" class="btn" data-fit="actual" title="Actual size (100%)">1:1</button>
+            </div>
+            <span class="dim" id="image-zoom-readout"></span>
+          </div>
+          <div class="image-viewport" id="image-viewport">
+            <img id="preview-image" class="source-image" alt="Source scan" draggable="false">
+            <p class="image-empty dim" id="image-empty">(no document selected)</p>
+            <div class="image-meta-overlay" id="preview-meta-overlay"></div>
+          </div>
+        </div>
+        <div class="compare-bar">
+          <h2 class="compare-title">No document selected</h2>
+          <select id="preview-item-select" class="select"></select>
+          <span class="compare-conf dim"></span>
+          <label class="fabricated-toggle" title="Mark OCR that invents text not present in the source image">
+            <input type="checkbox" id="preview-fabricated-result" disabled> Fabricated result
+          </label>
+          <button class="btn" id="btn-reprocess" type="button" disabled style="margin-left:0.5rem;" title="Re-run downstream stages after correction">Re-process</button>
+          <span class="spacer"></span>
+        </div>
+        <div class="compare-panes">
+          <div class="compare-pane" data-pane="raw">
+            <div class="compare-pane-head">
+              <span>RAW OCR</span>
+              <span class="compare-pane-actions">
+                <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
+                <button class="btn" id="btn-save-raw" type="button" disabled>Save correction</button>
+                <span class="compare-meta dim"></span>
+              </span>
+            </div>
+            <div class="compare-text"><span class="empty">(not run)</span></div>
+          </div>
+          <div class="compare-pane" data-pane="cleaned">
+            <div class="compare-pane-head">
+              <span>CLEANED</span>
+              <span class="compare-pane-actions">
+                <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
+                <button class="btn" id="btn-save-cleaned" type="button" disabled>Save correction</button>
+                <span class="compare-meta dim"></span>
+              </span>
+            </div>
+            <div class="compare-text"><span class="empty">(not run)</span></div>
+          </div>
+          <div class="compare-pane" data-pane="translated">
+            <div class="compare-pane-head">
+              <span>TRANSLATED</span>
+              <span class="compare-pane-actions">
+                <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
+                <button class="btn" id="btn-save-translated" type="button" disabled>Save correction</button>
+                <span class="compare-meta dim"></span>
+              </span>
+            </div>
+            <div class="compare-text"><span class="empty">(not run)</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= HISTORY -->
+    <section class="panel" id="panel-history">
+      <div class="card" style="margin-bottom:1rem;">
+        <div class="card-head">
+          <h2>History</h2>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <input type="text" id="history-search" placeholder="Find file&hellip;" style="padding:0.4rem 0.6rem; border-radius:var(--radius-sm); border:1px solid var(--rule); background:var(--paper-recessed);">
+            <button type="button" class="btn" id="btn-history-refresh">Refresh</button>
+            <button type="button" class="btn" id="btn-history-export-fabricated" title="Open reviewer-labelled OCR examples as JSON">Export flagged OCR</button>
+            <button type="button" class="btn" id="btn-history-send-tropy" title="Add notes for every eligible document in this run to Tropy" disabled>Send run to Tropy&hellip;</button>
+            <button type="button" class="btn danger" id="btn-history-delete">Delete Run</button>
+          </div>
+        </div>
+        <div class="history-grid">
+          <div>
+            <h3 class="dim" style="margin:0 0 0.5rem;">Runs</h3>
+            <div class="queue-wrap" style="max-height:26vh;">
+              <table class="queue">
+                <thead><tr><th>Started</th><th>Stages</th><th class="c">Files</th><th class="c">Failed</th><th class="c">Elapsed</th></tr></thead>
+                <tbody id="history-runs-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 class="dim" style="margin:0.75rem 0 0.5rem;">Documents</h3>
+            <div class="queue-wrap" style="max-height:26vh;">
+              <table class="queue">
+                <thead><tr><th>File</th><th>State</th><th>Language</th><th class="c" title="Quality score: how confident the AI is that it read the text correctly (0–100)">Conf</th><th>Review</th></tr></thead>
+                <tbody id="history-items-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card compare-card compare-card--with-image">
+        <div class="image-pane" id="history-image-pane">
+          <div class="image-toolbar">
+            <button class="btn" id="btn-history-image-reset" type="button" title="Reset zoom (or double-click the image)">Reset</button>
+            <div class="btn-group">
+              <button type="button" class="btn" data-fit="width" title="Fit to width">W</button>
+              <button type="button" class="btn" data-fit="height" title="Fit to height">H</button>
+              <button type="button" class="btn" data-fit="actual" title="Actual size (100%)">1:1</button>
+            </div>
+            <span class="dim" id="history-image-zoom-readout"></span>
+          </div>
+          <div class="image-viewport" id="history-image-viewport">
+            <img id="history-image" class="source-image" alt="Source scan" draggable="false">
+            <p class="image-empty dim" id="history-image-empty">(no document selected)</p>
+            <div class="image-meta-overlay" id="history-meta-overlay"></div>
+          </div>
+          <div class="thumbnail-strip" id="history-thumbnails"></div>
+        </div>
+        <div class="compare-bar">
+          <h2 class="compare-title">No document selected</h2>
+          <span class="compare-conf dim"></span>
+          <label class="fabricated-toggle" title="Mark OCR that invents text not present in the source image">
+            <input type="checkbox" id="history-fabricated-result" disabled> Fabricated result
+          </label>
+        </div>
+        <div class="compare-panes">
+          <div class="compare-pane" data-pane="raw">
+            <div class="compare-pane-head">
+              <span>RAW OCR</span>
+              <span class="compare-pane-actions">
+                <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
+                <label class="diff-toggle" title="Show diff highlights in editable mode">
+                  <input type="checkbox" id="btn-history-diff-toggle"> Diff
+                </label>
+                <button class="btn" id="btn-history-save-raw" type="button" disabled>Save correction</button>
+                <span class="compare-meta dim"></span>
+              </span>
+            </div>
+            <div class="compare-text"><span class="empty">(not run)</span></div>
+          </div>
+          <div class="compare-pane" data-pane="cleaned">
+            <div class="compare-pane-head">
+              <span>CLEANED</span>
+              <span class="compare-pane-actions">
+                <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
+                <button class="btn" id="btn-history-save-cleaned" type="button" disabled>Save correction</button>
+                <span class="compare-meta dim"></span>
+              </span>
+            </div>
+            <div class="compare-text"><span class="empty">(not run)</span></div>
+          </div>
+          <div class="compare-pane" data-pane="translated">
+            <div class="compare-pane-head">
+              <span>TRANSLATED</span>
+              <span class="compare-pane-actions">
+                <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
+                <button class="btn" id="btn-history-save-translated" type="button" disabled>Save correction</button>
+                <span class="compare-meta dim"></span>
+              </span>
+            </div>
+            <div class="compare-text"><span class="empty">(not run)</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ SETTINGS -->
+    <section class="panel" id="panel-settings">
+      <div class="settings-intro">
+        <h2>OCR settings</h2>
+        <p>Choose how Artifice reads and processes your documents. Changes apply to new runs after you save them.</p>
+      </div>
+      <div class="settings-workbench">
+        <nav class="settings-section-nav" aria-label="Settings sections">
+          <button type="button" class="active" data-settings-target="settings-models">Local models <span>&rarr;</span></button>
+          <button type="button" data-settings-target="settings-processing">Processing <span>&rarr;</span></button>
+          <button type="button" data-settings-target="settings-tropy">Tropy &amp; folders <span>&rarr;</span></button>
+          <button type="button" data-settings-target="settings-diagnostics">Diagnostics <span>&rarr;</span></button>
+        </nav>
+        <div class="settings-sheet">
+          <section class="settings-section" id="settings-models">
+            <div class="settings-section-head"><h3>Local models</h3><p>Automatic detects Ollama and LM Studio, then chooses a suitable installed model when a run starts.</p></div>
+            <div class="settings-form-grid">
+              <label>OCR service
+                <select id="set-ocr_backend"><option value="auto">Automatic (recommended)</option><option value="ollama">Ollama</option><option value="lm_studio">LM Studio</option><option value="huggingface">Hugging Face</option><option value="api_key">API key</option></select>
+              </label>
+              <label>OCR model
+                <select id="pick-ocr_model" class="local-model-picker" aria-label="Available OCR models"></select>
+                <input type="text" id="set-ocr_model" class="model-name-input" list="detected-local-models" placeholder="Enter a model name">
+              </label>
+              <label>Cleanup service
+                <select id="set-cleanup_backend"><option value="auto">Automatic (recommended)</option><option value="ollama">Ollama</option><option value="lm_studio">LM Studio</option><option value="huggingface">Hugging Face</option><option value="api_key">API key</option></select>
+              </label>
+              <label>Cleanup model
+                <select id="pick-cleanup_model" class="local-model-picker" aria-label="Available cleanup models"></select>
+                <input type="text" id="set-cleanup_model" class="model-name-input" list="detected-local-models" placeholder="Enter a model name">
+              </label>
+              <label>Translation service
+                <select id="set-translate_backend"><option value="auto">Automatic (recommended)</option><option value="ollama">Ollama</option><option value="lm_studio">LM Studio</option><option value="huggingface">Hugging Face</option><option value="api_key">API key</option></select>
+              </label>
+              <label>Translation model
+                <select id="pick-translate_model" class="local-model-picker" aria-label="Available translation models"></select>
+                <input type="text" id="set-translate_model" class="model-name-input" list="detected-local-models" placeholder="Enter a model name">
+              </label>
+              <datalist id="detected-local-models"></datalist>
+              <div class="settings-model-discovery settings-full">
+                <span id="local-model-status" class="settings-field-help" aria-live="polite">Choose a local service to see its installed models.</span>
+                <button type="button" class="btn btn-small" id="btn-refresh-models">Refresh available models</button>
+              </div>
+              <p class="settings-field-help settings-full">Automatic lets Artifice choose a suitable installed model. Connection addresses are discovered for you when possible.</p>
+              <details class="settings-disclosure settings-full">
+                <summary>Other providers and connection addresses <span class="settings-summary-hint">Optional</span></summary>
+                <div class="settings-disclosure-body settings-form-grid">
+                  <label>LM Studio address <input type="text" id="set-lm_studio_url" placeholder="http://localhost:1234/v1"></label>
+                  <label>Ollama address <input type="text" id="set-ollama_url" placeholder="http://localhost:11434"></label>
+                  <label>Hugging Face token <input type="text" id="set-huggingface_token" placeholder="Not set"></label>
+                  <label>API key <input type="password" id="set-api_key" placeholder="Not set"></label>
+                  <label>API base URL <input type="text" id="set-api_base_url" placeholder="https://api.openai.com/v1"></label>
+                </div>
+              </details>
+            </div>
+          </section>
+
+          <section class="settings-section" id="settings-processing">
+            <div class="settings-section-head"><h3>Processing defaults</h3><p>Safe starting values for mixed historical documents. Change them only when the collection needs it.</p></div>
+            <div class="settings-form-grid">
+              <label>Document type <select id="set-document_type"></select><span class="settings-field-help" id="doc-type-hint"></span></label>
+              <label>Domain instruction (optional) <input type="text" id="set-ocr_prompt_instruction" placeholder="This is a 19th-century archaeological field catalogue in German Kurrentschrift"><span class="settings-field-help">A sentence about the collection, appended to the OCR prompt. Leave empty to use the standard prompt.</span></label>
+              <label>Pages processed at once <input type="number" id="set-max_ocr_workers" min="1"></label>
+              <div class="settings-checks settings-full">
+                <label><input type="checkbox" id="set-resume"><span>Reuse completed text<small>Skip stages whose saved output already exists.</small></span></label>
+                <label><input type="checkbox" id="set-confidence_enabled"><span>Score OCR confidence<small>Flag difficult pages for closer review.</small></span></label>
+                <label><input type="checkbox" id="set-preprocess_enabled"><span>Enhance faint scans before OCR<small>Even out lighting and stretch contrast without changing the source.</small></span></label>
+                <label><input type="checkbox" id="set-tesseract_fallback_on_failure"><span>Fall back to Tesseract after a model failure<small>Used only when Tesseract and the requested language data are available.</small></span></label>
+              </div>
+              <label>OCR engine <select id="set-ocr_engine"><option value="vision_model">Vision model (recommended)</option><option value="tesseract">Tesseract</option></select><span class="settings-field-help" id="tesseract-status" aria-live="polite">Checking for Tesseract&hellip;</span></label>
+              <details class="settings-disclosure settings-full">
+                <summary>Advanced model limits <span class="settings-summary-hint">Less common controls</span></summary>
+                <div class="settings-disclosure-body settings-form-grid">
+                  <label>Maximum text chunk <input type="number" id="set-chunk_max_tokens" min="100"></label>
+                  <label>Context size <input type="number" id="set-context_size" min="0" step="1024"><span class="settings-field-help" id="context-size-hint" aria-live="polite">0 uses the model&rsquo;s default.</span></label>
+                  <label>Tesseract language <input type="text" id="set-tesseract_lang" placeholder="eng"></label>
+                  <label>Tesseract path <input type="text" id="set-tesseract_path" placeholder="Automatic — detect on PATH"></label>
+                  <label class="settings-checkbox"><input type="checkbox" id="set-ollama_think"> Think step-by-step with Ollama <span class="settings-field-help">Slower and usually unnecessary for OCR cleanup.</span></label>
+                </div>
+              </details>
+            </div>
+          </section>
+
+          <section class="settings-section" id="settings-tropy">
+            <div class="settings-section-head"><h3>Tropy and folders</h3><p>Projects are read directly; reviewed text returns through Tropy&rsquo;s Developer API. Artifice never edits the project database.</p></div>
+            <div class="settings-form-grid">
+              <label class="settings-checkbox settings-full"><input type="checkbox" id="set-tropy_live_browse_enabled"> Enable Tropy project browsing</label>
+              <label>Developer API port <input type="number" id="set-tropy_api_port" min="0" max="65535"><span class="settings-field-help">0 automatically detects Tropy&rsquo;s configured, stable, or beta port.</span></label>
+              <div class="settings-full">
+                <h4>Approved folders</h4>
+                <p class="settings-field-help">Artifice can read and write only inside locations you approve.</p>
+                <ul id="approved-folders-list" class="approved-folders-list"></ul>
+                <button class="btn" id="btn-approved-folder-add" type="button">Add folder&hellip;</button>
+                <span id="approved-folders-status" class="dim"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-section" id="settings-diagnostics">
+            <div class="settings-section-head"><h3>Diagnostics</h3><p>Connection checks run automatically when Settings opens and can be repeated before a large collection.</p></div>
+            <div id="health-panel" class="health-panel" aria-live="polite"><p class="dim">Checking local services&hellip;</p></div>
+            <button type="button" class="btn" id="btn-preflight">Check connections again</button>
+          </section>
+        </div>
+      </div>
+      <div class="run-row settings-actions" role="region" aria-label="Save settings">
+        <button type="button" class="btn accent" id="btn-settings-save">Save Settings</button>
+        <button type="button" class="btn" id="btn-settings-reset">Reset to Defaults</button>
+        <span class="dim settings-save-status" id="settings-saved" role="status" aria-live="polite">No changes</span>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="statusbar">
+    <span id="status-text">Ready</span>
+    <span id="stage-text" class="dim"></span>
+  </div>
+
+  <!-- Tropy: browse a live project read-only -->
+  <div class="modal-backdrop hidden" id="modal-tropy-add">
+    <div class="modal tropy-dialog tropy-browser-dialog" role="dialog" aria-modal="true" aria-labelledby="tropy-browser-title" aria-describedby="tropy-browser-description">
+      <header class="tropy-dialog-header">
+        <div>
+          <h3 id="tropy-browser-title">Add pages from Tropy</h3>
+          <p id="tropy-browser-description">Open a project, choose a list or tag, then select the items you need.</p>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Close Tropy browser">&times;</button>
+      </header>
+      <p class="tropy-readonly-note">Your project is opened read-only. Artifice does not change it during import.</p>
+      <div id="tropy-mode-browse">
+        <div class="tropy-browse-header">
+          <div class="tropy-recent-projects hidden" id="tropy-browse-recent-row">
+            <label class="field-label" for="tropy-browse-recent">Recent project</label>
+            <select class="select" id="tropy-browse-recent">
+              <option value="">Choose a recent project&hellip;</option>
+            </select>
+          </div>
+          <label class="field-label" for="tropy-browse-path">Project folder</label>
+          <div class="tropy-browse-path-row">
+            <input type="text" id="tropy-browse-path" class="input" placeholder="Path to a .tropy project folder" aria-describedby="tropy-browse-path-help tropy-browse-error-text">
+            <button class="btn" id="btn-tropy-browse-pick" type="button">Choose folder&hellip;</button>
+            <button class="btn accent" id="btn-tropy-browse-load" type="button">Open project</button>
+          </div>
+          <p class="tropy-field-help" id="tropy-browse-path-help">Select the folder whose name ends in <code>.tropy</code>.</p>
+          <div class="tropy-browse-project-info hidden" id="tropy-browse-project-info">
+            <span class="tropy-project-open-label">Open</span>
+            <span class="tropy-browse-project-name" id="tropy-browse-project-name"></span>
+          </div>
+          <div class="tropy-browse-project-info hidden" id="tropy-browse-loading" role="status" aria-live="polite">
+            <span class="tropy-spinner" aria-hidden="true"></span>
+            <span class="tropy-browse-loading-text">Opening project&hellip;</span>
+          </div>
+          <div class="tropy-browse-project-info hidden" id="tropy-browse-error" role="alert">
+            <span class="tropy-browse-error-text error" id="tropy-browse-error-text"></span>
+          </div>
+        </div>
+
+        <!-- Two-pane: source tree (lists + tags) | item list -->
+        <div class="tropy-browse-picker-grid hidden" id="tropy-browse-picker">
+          <!-- Left: lists + tags -->
+          <div class="tropy-source-pane" id="tropy-browse-source-pane" aria-label="Lists and tags">
+            <div class="tropy-source-section-label">Lists</div>
+            <div id="tropy-browse-lists"><span class="dim tropy-source-empty">No lists</span></div>
+            <div class="tropy-source-section-label">Tags</div>
+            <div id="tropy-browse-tags"></div>
+          </div>
+          <!-- Right: item list -->
+          <div class="tropy-item-pane" id="tropy-browse-item-pane" aria-live="polite">
+            <div class="tropy-item-toolbar">
+              <span class="tropy-source-section-label">Items</span>
+              <button class="btn btn-small" id="btn-tropy-browse-item-select-all" type="button" disabled>Select all</button>
+            </div>
+            <div class="empty-state" id="tropy-browse-item-empty">Choose a list or tag to see its items.</div>
+            <div id="tropy-browse-item-list"></div>
+          </div>
+        </div>
+
+        <div class="tropy-browse-summary hidden" id="tropy-browse-summary" role="status" aria-live="polite">
+          <span id="tropy-browse-summary-text" class="dim">No items selected</span>
+          <span class="spacer"></span>
+        </div>
+      </div>
+      <div class="tropy-dialog-footer" id="tropy-footer-browse">
+        <button class="btn" id="btn-tropy-cancel-browse" type="button">Cancel</button>
+        <button class="btn accent" id="btn-tropy-browse-enqueue" type="button" disabled>Add selected pages</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF export modal -->
+  <div class="modal-backdrop hidden" id="modal-compile-pdf">
+    <div class="modal" style="width:min(640px, 94vw);">
+      <h3>Compile PDF</h3>
+      <button type="button" class="modal-close" data-modal-close>&times;</button>
+      <p class="dim">Compile the saved text in this project into one continuous reading document.</p>
+
+      <input type="hidden" id="pdf-folder">
+
+      <div style="display:flex; gap:1.2rem; flex-wrap:wrap; margin-bottom:0.6rem;">
+        <label>Stage:
+          <select id="pdf-stage">
+            <option value="cleaned">Cleaned text</option>
+            <option value="raw_ocr">Raw OCR text</option>
+            <option value="translated">Translation</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="pdf-structure" checked> Structure text</label>
+        <label class="check"><input type="checkbox" id="pdf-bilingual"> Bilingual (original + translation)</label>
+        <label>Format:
+          <select id="pdf-format">
+            <option value="pdf">PDF</option>
+            <option value="md">Markdown</option>
+          </select>
+        </label>
+        <label>Style:
+          <select id="pdf-style">
+            <option value="readable">Readable</option>
+            <option value="academic">Academic</option>
+            <option value="compact">Compact</option>
+          </select>
+        </label>
+      </div>
+      <p class="dim" id="pdf-bilingual-hint" style="display:none; margin:-0.3rem 0 0.6rem;">
+        Requires both cleaned/ and translated/ outputs in the folder.  Structure pass is skipped unless you check it below.
+      </p>
+
+      <details class="settings-disclosure">
+        <summary>Change destination</summary>
+        <div class="settings-disclosure-body">
+          <label class="field-label" for="pdf-output">Save to</label>
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="pdf-output" class="input" style="flex:1;" placeholder="Default: current project folder">
+            <button type="button" class="btn" id="btn-pdf-browse-output">Browse&hellip;</button>
+          </div>
+        </div>
+      </details>
+      <button type="button" class="hidden" id="btn-pdf-browse-folder" aria-hidden="true" tabindex="-1"></button>
+
+      <p class="dim" id="pdf-status"></p>
+      <div id="pdf-log" style="max-height:26vh; overflow:auto; background:var(--paper-recessed); border-radius:var(--radius); padding:0.6rem; font-family:var(--font-mono); font-size:0.82rem; white-space:pre-wrap;"></div>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;">
+        <button type="button" class="btn" id="btn-pdf-close">Close</button>
+        <button type="button" class="btn danger" id="btn-pdf-cancel" disabled>Cancel export</button>
+        <button type="button" class="btn accent" id="btn-pdf-start">Start</button>
+        <button type="button" class="btn" id="btn-pdf-download" disabled>Download</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE export modal -->
+  <div class="modal-backdrop hidden" id="modal-export-page">
+    <div class="modal" style="width:min(520px, 94vw);">
+      <h3>Export PAGE</h3>
+      <button type="button" class="modal-close" data-modal-close>&times;</button>
+      <p class="dim">Export the authoritative PAGE XML record for the selected queue rows &mdash;
+        raw, cleaned and translated text together, not a single flattened stage.</p>
+
+      <input type="hidden" id="page-export-folder">
+
+      <p class="dim" id="page-export-status"></p>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;">
+        <button type="button" class="btn" id="btn-page-export-close">Close</button>
+        <button type="button" class="btn accent" id="btn-page-export-start">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tropy: official Developer API note write-back -->
+  <div class="modal-backdrop hidden" id="modal-tropy-send">
+    <div class="modal tropy-dialog tropy-send-dialog" role="dialog" aria-modal="true" aria-labelledby="tropy-modal-title" aria-describedby="tropy-help-text tropy-help-detail">
+      <header class="tropy-dialog-header">
+        <div>
+          <h3 id="tropy-modal-title">Add notes to Tropy</h3>
+          <p id="tropy-help-text">Send saved text back to the original Tropy photos.</p>
+        </div>
+        <button type="button" class="modal-close" data-modal-close aria-label="Close Tropy note dialog">&times;</button>
+      </header>
+      <p class="tropy-readonly-note" id="tropy-help-detail">Keep the matching project open with the Developer API enabled. Preview checks the project and skips notes that already match.</p>
+
+      <dl class="tropy-export-summary" id="tropy-export-summary" aria-label="Note preview summary">
+        <div><dt>Selected</dt><dd id="tropy-export-stat-items">0</dd></div>
+        <div><dt>Matched</dt><dd id="tropy-export-stat-photos">0</dd></div>
+        <div><dt>New notes</dt><dd id="tropy-export-stat-transcriptions">0</dd></div>
+      </dl>
+
+      <div class="tropy-export-options">
+        <label class="field-label" for="tropy-export-stage" id="tropy-export-label">Saved text to send</label>
+        <select id="tropy-export-stage">
+          <option value="cleaned">Cleaned text</option>
+          <option value="raw_ocr">Raw OCR text</option>
+          <option value="translated">Translation</option>
+        </select>
+      </div>
+
+      <div class="tropy-writeback-section" id="tropy-writeback-section">
+        <div class="tropy-writeback-preview hidden" id="tropy-writeback-preview" role="status" aria-live="polite" aria-atomic="true"></div>
+      </div>
+
+      <div class="tropy-export-loading hidden" id="tropy-export-loading">
+        <span class="tropy-spinner" aria-hidden="true"></span>
+        <span id="tropy-export-loading-text">Generating Tropy export&hellip;</span>
+      </div>
+
+      <div class="tropy-export-status dim" id="tropy-export-status" role="status" aria-live="polite"></div>
+
+      <div class="tropy-writeback-footer" id="tropy-writeback-footer">
+        <button class="btn" id="btn-send-tropy-close-writeback" type="button">Close</button>
+        <button class="btn" id="btn-writeback-preview" type="button">Check again</button>
+        <button class="btn accent" id="btn-writeback-commit" type="button" disabled>Add notes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Batch correct dialog -->
+  <div class="modal-backdrop hidden" id="modal-batch-correct">
+    <div class="modal" style="width:min(480px, 94vw);">
+      <h3>Batch Correct</h3>
+      <button type="button" class="modal-close" data-modal-close>&times;</button>
+      <p class="dim" style="margin-bottom:0.6rem;">Apply a find/replace correction to all items or selected items in the queue.</p>
+
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <label>Find:
+          <input type="text" id="batch-find" class="input" style="width:100%;" placeholder="Text to find">
+        </label>
+        <label>Replace with:
+          <input type="text" id="batch-replace" class="input" style="width:100%;" placeholder="Replacement text">
+        </label>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+          <label class="check"><input type="checkbox" id="batch-stage-raw" checked> Raw OCR</label>
+          <label class="check"><input type="checkbox" id="batch-stage-cleaned" checked> Cleaned</label>
+          <label class="check"><input type="checkbox" id="batch-stage-translated" checked> Translated</label>
+        </div>
+        <label class="check" style="margin-top:0.3rem;">
+          <input type="checkbox" id="batch-apply-selected"> Selected items only
+        </label>
+      </div>
+
+      <p class="dim" id="batch-status" style="margin-top:0.5rem;"></p>
+
+      <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;">
+        <button type="button" class="btn" id="btn-batch-cancel">Close</button>
+        <button type="button" class="btn accent" id="btn-batch-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

@@ -1,0 +1,44 @@
+{# SPDX-FileCopyrightText: 2026 Maurice Casey #}
+{# SPDX-License-Identifier: AGPL-3.0-or-later #}
+{# Shared Artifice application shell. Extend this template and override workspace. #}
+<!doctype html>
+<html lang="en" data-app="{{ app_slug }}" data-theme="system">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ page_title }} · Artifice {{ brand_accent }}</title>
+  <link rel="stylesheet" href="/shared/fonts.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/shared/tokens.css?v={{ asset_v }}">
+  <link rel="stylesheet" href="/shared/shell.css?v={{ asset_v }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="shell-skip" href="#workspace">Skip to workspace</a>
+  <div class="app-shell">
+    <header class="shell-titlebar pywebview-drag-region">
+      <button class="shell-icon-button shell-menu pywebview-drag-region-exclude" type="button" data-shell-action="nav" aria-label="Open navigation" aria-expanded="false">☰</button>
+      <a class="shell-brand pywebview-drag-region-exclude" href="/">Artifice <strong>{{ brand_accent }}</strong></a>
+      {% if document_context %}<span class="shell-context">{{ document_context }}</span>{% endif %}
+      <div class="shell-title-actions pywebview-drag-region-exclude">
+        <button class="shell-status" type="button" data-shell-action="model"><span class="status-dot" aria-hidden="true"></span><span data-model-label>Set up model</span></button>
+        <button class="shell-icon-button" type="button" data-shell-action="theme" aria-label="Change colour theme">◐</button>
+        <button class="shell-icon-button" type="button" data-shell-action="suite" aria-label="Switch Artifice application" aria-expanded="false">✦</button>
+      </div>
+      <div class="window-controls pywebview-drag-region-exclude" aria-label="Window controls">
+        <button type="button" id="windowMinimize" aria-label="Minimize">−</button><button type="button" id="windowMaximize" aria-label="Maximize">□</button><button type="button" id="windowClose" aria-label="Close">×</button>
+      </div>
+    </header>
+    <aside class="shell-nav" aria-label="Primary" data-shell-panel="nav">
+      <div class="shell-nav-heading">{{ page_title }}</div>
+      <nav>{% for item in nav_items %}<a href="{{ item.href }}"{% if item.key == active_tab %} aria-current="page"{% endif %}>{{ item.label }}</a>{% endfor %}</nav>
+    </aside>
+    <main class="shell-workspace" id="workspace" tabindex="-1">{% block workspace %}{% endblock %}</main>
+    {% if show_inspector %}<aside class="shell-inspector" aria-label="Inspector">{% block inspector %}{% endblock %}</aside>{% endif %}
+    {% if show_activity %}<aside class="shell-activity" aria-label="Activity" aria-live="polite"><button type="button" class="activity-heading" data-shell-action="activity" aria-expanded="true">Activity <span data-activity-count>0</span></button><div data-activity-list>{% block activity %}{% endblock %}</div></aside>{% endif %}
+  </div>
+  <div class="suite-popover" data-suite-popover hidden><strong>Artifice suite</strong><div data-suite-apps></div></div>
+  <script src="/shared/window-controls.js?v={{ asset_v }}"></script>
+  <script src="/shared/shell.js?v={{ asset_v }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

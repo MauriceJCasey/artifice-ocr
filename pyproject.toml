@@ -1,0 +1,69 @@
+[project]
+name = "artifice-ocr-workspace"
+version = "0.1.0"
+description = "Workspace root for Artifice OCR and its shared support packages."
+requires-python = ">=3.11"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+dependencies = []
+
+[project.optional-dependencies]
+ocr = ["artifice-ocr", "artifice-model-harness>=0.2.0", "artifice-shared-ui>=0.2.0"]
+web = ["artifice-ocr[web,window]", "artifice-model-harness>=0.2.0", "artifice-shared-ui>=0.2.0"]
+all = ["artifice-ocr[web,window]", "artifice-model-harness>=0.2.0", "artifice-shared-ui>=0.2.0"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# This root package ships no code of its own — it only exists so the workspace
+# and its extras have somewhere to be declared.
+py-modules = []
+
+# Workspace-only packages, not published anywhere. `[tool.uv.sources]` below
+# maps each name to its local sibling directory so uv resolves and installs
+# them (editable) in one step:
+#   uv sync --extra ocr       # CLI only
+#   uv sync --extra web       # + the web UI
+[tool.uv.workspace]
+members = [
+    "apps/artifice-ocr",
+    "packages/model-harness",
+    "packages/output-layout",
+    "packages/secure-io",
+    "packages/shared-ui",
+]
+
+[tool.uv.sources]
+artifice-ocr = { workspace = true }
+artifice-model-harness = { workspace = true }
+artifice-output-layout = { workspace = true }
+artifice-secure-io = { workspace = true }
+artifice-shared-ui = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-httpx>=0.36.2",
+    "httpx>=0.27.0",
+    "lxml>=5.0",
+    "pillow>=10.0",
+    "ruff>=0.5.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+markers = [
+    "live_smoke: live smoke test requiring a running Ollama server (run with --live-smoke)",
+    "live_interop: opt-in test requiring a real third-party desktop application",
+    "ui_stress: deterministic browser and state-machine stress tests",
+]
+addopts = "-m 'not live_smoke and not live_interop and not ui_stress'"

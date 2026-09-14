@@ -1,0 +1,187 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* prose.css — Shared editorial reading-page system for the Artifice Suite.
+ *
+ * Accompanies the about.html Jinja template that all four apps already
+ * share. artifice-graph is the only app whose own app.css already defines
+ * this system (app.css:192-254, :696-706) and it is the visual target;
+ * this file copies that structure so ocr, draft and transcribe render
+ * About identically, without duplicating the rules a third time into each
+ * app's own stylesheet. graph itself keeps reading its own copy and is not
+ * touched or repointed at this file — see the brief this file was written
+ * against (.briefs/ui-ux-about-page-system.md) for why that convergence is
+ * a separate, deferred pass.
+ *
+ * Colour, font, radius and the fluid type scale below are all var()
+ * references onto tokens.css, per this file's brief. Non-typographic
+ * spacing (margins/padding on .page, .masthead, .section-head, .foot) is
+ * copied as the literal rem values graph itself already uses for them —
+ * graph does not route this spacing through the --space-* scale either,
+ * so matching it is matching "graph's structure", not a hardcoding lapse.
+ *
+ * Per-app accent identity (--accent, --accent-deep, --accent-wash) is
+ * inherited through the cascade from the host app's stylesheet — none is
+ * declared here, exactly as masthead.css does.
+ */
+
+/* ── Page container (.page, .page-prose) ─────────────────────────────── */
+
+.page {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: calc(var(--nav-height) + 2rem) 1.25rem 4rem;
+}
+
+/* Reading-measure pages (prose, no dashboard grids) — caps content-focused
+   reading at 44rem, matching graph's .page.page-prose (app.css:202). */
+.page.page-prose {
+  max-width: 44rem;
+}
+
+/* Establishes the prose typographic context so every unclassed descendant
+   (p, li, strong, ...) inherits the serif reading face and its leading,
+   rather than falling through to body — which in ocr and transcribe is
+   the sans app-shell face at default (~1.2) leading, and is only
+   correct by accident in draft, whose body already happens to be serif.
+   .section-head/.masthead .label/.foot (--font-label), .masthead h1
+   (--font-display) and .mono (--font-mono) all still override this, as
+   they already declare their own font-family. 1.75 matches graph's own
+   body { line-height: 1.75 } (app.css:41) — tokens.css has no leading or
+   line-height token to reference instead of the literal.
+
+   NB: do not write a "--leading-<star>" glob in this comment. The star
+   followed by a slash closes the comment early, and the CSS parser's
+   error recovery then discards the .page-prose rule below it — which
+   fails silently and cost a debugging cycle to find. */
+.page-prose {
+  font-family: var(--font-body);
+  line-height: 1.75;
+}
+
+/* base.html wraps every {% block content %} in <div class="app"
+   id="main-content"> — correct for the dashboard shell (index.html: fixed
+   tabs + a flex-1 scrolling panel), wrong for a top-to-bottom prose
+   document, which should scroll with the page, not be capped to the
+   viewport height by an ancestor it doesn't need. Rather than add a
+   conditional wrapper to base.html (which every app's index.html also
+   renders through, and which Jinja disallows expressing as two `{% block
+   content %}` tags in one template), this scopes the escape to exactly the
+   case that needs it. :has() is an established pattern in this codebase
+   (byom.css .byom-tier-card:has(...)); an engine without :has() support
+   simply keeps today's behaviour, not a regression. */
+.app:has(> .page-prose) {
+  display: block;
+  height: auto;
+}
+
+/* transcribe's base.html renders a global-search bar (.masthead-search)
+   unconditionally, ahead of {% block content %} — there is nothing to
+   search on About, so it must not be visible there. Hidden by CSS rather
+   than omitted from the DOM (which the brief this file was written
+   against originally asked for): app.js's initGlobalSearch() reads
+   #global-search-input and calls addEventListener on it with no null
+   guard, unconditionally, on every page load, so removing the element
+   would throw a TypeError on About and silently abort the rest of that
+   app's init() sequence. app.js is outside this pass's file scope to add
+   a guard to, so display:none is the fix that fits within it. The '/'
+   keyboard shortcut can still focus this now-hidden input on About — a
+   residual quirk of the same constraint, flagged rather than fixed. */
+body:has(.page-prose) .masthead-search {
+  display: none;
+}
+
+/* ── Page header (.masthead as a document head — distinct from the fixed
+   .topnav in masthead.css, and from the dead app-bar .masthead this class
+   name was recycled from in ocr/transcribe's own app.css) ─────────────── */
+
+.masthead {
+  border-top: 4px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+.masthead .label {
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.masthead h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-hero);
+  margin: 0 0 0.5rem;
+  line-height: 1.15;
+}
+
+.masthead-rule {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 0.75rem 0 0;
+}
+
+/* ── Section heading (.section-head) ─────────────────────────────────── */
+
+.section-head {
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.35rem;
+  margin: 2.5rem 0 1.25rem;
+}
+
+/* ── Footer (.foot) ───────────────────────────────────────────────────── */
+
+.foot {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--label-tracking);
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* ── Prose list ───────────────────────────────────────────────────────
+   Every about.html's numbered "how it works" list carried this as an
+   inline style="..." because nothing here existed to style it. Scoped to
+   .page-prose rather than a new class, since the <ol> itself is and stays
+   unclassed markup. font-family now comes from .page-prose above (dropped
+   here as redundant); line-height and padding-left stay — 1.8 still
+   differs from .page-prose's inherited 1.75, and padding-left has no
+   inherited value to fall back to. */
+
+.page-prose ol {
+  line-height: 1.8;
+  padding-left: 1.25rem;
+}
+
+/* ── Inline code block (.mono) ───────────────────────────────────────────
+   Used by every about.html's "Run it" <pre class="mono">. Undefined
+   anywhere in the repo before this file — including in graph, which also
+   patches around it with an inline style (out of scope to touch here).
+   font-family is --font-mono, which is not in this file's brief's example
+   token list but is the token tokens.css itself documents as existing for
+   exactly this case ("apps that display logs, code" — tokens.css:38-40). */
+
+.mono {
+  background: var(--paper-raised);
+  padding: 0.9rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}

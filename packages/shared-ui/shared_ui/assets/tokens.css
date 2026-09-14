@@ -1,0 +1,204 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* The New Masses — canonical design tokens.
+   Source of truth: Design_Philosophy.md. Keep in sync with any app-local
+   :root block until those are consolidated to import this file directly. */
+
+:root {
+  /* Paper / ink — light mode (default) */
+  --paper: #f6f3ea;
+  --paper-raised: #fbf9f3;
+  --paper-recessed: #efebdf;
+  --ink: #1b1813;
+  --ink-soft: #4b463d;
+  --ink-faint: #635e51;
+  --rule: #ddd6c6;
+  --rule-dark: #45413a;
+  --gold: #bf9b30;
+
+  /* Semantic (status, not part of core identity) */
+  /* --success is deliberately a different hue family (moss/olive, ~H90)
+     from --accent (forest green, ~H137) — a status colour must not read
+     as the brand accent. At the original #256b39 the two sat only
+     CIE76 delta-E 7.6 apart from --accent #2f7d45 — below the ~15
+     threshold where two colours reliably read as distinct. This value
+     holds delta-E ~20 to --accent while keeping 6.5:1 against --paper
+     #f6f3ea. Do not "harmonize" this back toward --accent. */
+  --success: #455f2b;
+  --warning: #7c5e1a;
+  --error: #a8322b;
+
+  /* Typography */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Libre Baskerville", Georgia, serif;
+  --font-label: "Archivo", "Franklin Gothic Medium", "Arial Narrow", sans-serif;
+  /* Not named in Design_Philosophy.md §3, but genuinely needed by apps that
+     display logs, code, or confidence readouts (e.g. artifice-graph's log
+     panel). */
+  --font-mono: "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo", monospace;
+
+  --text-xs: 0.72rem;
+  --text-sm: 0.8rem;
+  --text-base: 1.0625rem;
+  --text-lg: clamp(1.15rem, 1.05rem + 0.4vw, 1.3rem);
+  --text-h3: clamp(1.35rem, 1.2rem + 0.8vw, 1.8rem);
+  --text-h2: clamp(1.9rem, 1.5rem + 2vw, 2.8rem);
+  --text-hero: clamp(2.6rem, 1.6rem + 5.5vw, 5.25rem);
+
+  --label-tracking: 0.16em;
+
+  /* Shadows (§6) — paper-like: warm, diffused, never glowy or neon. */
+  --shadow-paper: 0 1px 2px rgba(27,24,19,0.05), 0 10px 28px -14px rgba(27,24,19,0.18);
+  --shadow-lifted: 0 2px 4px rgba(27,24,19,0.07), 0 22px 44px -18px rgba(27,24,19,0.28);
+  --shadow-nav: 0 6px 24px -16px rgba(27,24,19,0.3);
+  --shadow-modal: 0 4px 24px -4px rgba(27,24,19,0.35);
+
+  /* Corner radius (§5) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Spacing (§4) — 4px-derived scale, editorial: generous at section
+     boundaries, dense within content blocks. */
+  /* Expressed in rem, not px, so spacing scales with the reader's own font
+     size. A user who enlarges text in their browser gets proportionally larger
+     spacing; with px spacing the text grows inside gaps that do not, and
+     content collides or overflows its container. Values are the same numbers
+     as before at a 16px root — 0.5rem IS 8px — so nothing changes for a reader
+     on defaults. Do not "simplify" these back to px. */
+  --space-1: 0.125rem;  /*  2px at a 16px root */
+  --space-2: 0.25rem;   /*  4px */
+  --space-3: 0.5rem;    /*  8px */
+  --space-4: 0.75rem;   /* 12px */
+  --space-5: 1rem;      /* 16px */
+  --space-6: 1.25rem;   /* 20px */
+  --space-7: 1.5rem;    /* 24px */
+  --space-8: 1.75rem;   /* 28px */
+  --space-9: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-11: 3rem;     /* 48px */
+  --space-12: 5.5rem;   /* 88px */
+
+  /* Motion (§7) */
+  --ease-primary: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --duration-instant: 100ms;
+  --duration-fast: 250ms;
+  --duration-normal: 300ms;
+  --duration-slow: 450ms;
+  --duration-glacial: 700ms;
+
+  /* Layout (§4, §8.5) */
+  --nav-height: 56px;
+  --container-max: 1200px;
+
+  /* Row-alignment (§8.3) — any button or input that can share a row
+     must resolve to this height. 2.75rem = 44px at a 16px root, which
+     is the WCAG 2.5.5 (AAA) minimum target size and Apple's HIG minimum.
+     Use height (not min-height) on row-adjacent controls: min-height is
+     a floor that a <select>'s intrinsic browser chrome can overshoot,
+     producing misaligned controls in the same row. height clamps the
+     element to exactly 44px regardless of content type. Pair with
+     display: inline-flex; align-items: center on buttons for reliable
+     vertical centring of text and inline icons within the clamped height.
+     Compact/dense variants (.btn.tiny, find-bar, image-toolbar) are exempt. */
+  --control-height: 2.75rem;
+}
+
+/* ── Per-App Accent Identity ─────────────────────────────────────────────
+   --accent, --accent-deep and --accent-wash are NOT declared in canonical
+   runtime tokens.  Each app supplies its own triple in its local app.css,
+   inheriting through the cascade:
+     artifice-ocr       — viridian     #017259 / #005942 / rgba(1,114,89,0.07)
+                                           light 5.33:1 against --paper
+     artifice-graph     — ink blue     #066a9c / #005282 / rgba(6,106,156,0.07)
+                                           light 5.33:1 against --paper
+     artifice-draft     — deep berry   #892254 / #6d003d / rgba(137,34,84,0.07)
+                                           light 7.82:1 against --paper
+                                           (deliberately darker — L*32, C*47)
+     artifice-transcribe — violet      #715993 / #584179 / rgba(113,89,147,0.07)
+                                           light 5.33:1 against --paper
+   Dark-mode values are declared in each app's @media / [data-theme] blocks.
+   --accent-deep is lighter than --accent in dark mode (Design_Philosophy.md
+   §2: "is used as text — must read light").  Do not "correct" this.
+   Shared components reference var(--accent) and rely on cascade inheritance
+   from the host app.  Dev-only preview routes (e.g. /byom-preview) must
+   load a host app stylesheet to supply the --accent value.
+   ======================================================================= */
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--ink);
+}
+
+/* Dark mode — "Lamplight Archive". Two independent activation paths apply
+   the same palette:
+   1) an explicit [data-theme="dark"] attribute (theme toggle), below; and
+   2) the OS-level prefers-color-scheme, guarded so an explicit
+      [data-theme="light"] can still override it and force light mode. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #161310;
+    --paper-raised: #1f1b16;
+    --paper-recessed: #100e0b;
+    --ink: #e8e2d3;
+    --ink-soft: #beb5a3;
+    --ink-faint: #a39a88;
+    --rule: #38332b;
+    --rule-dark: #5b554a;
+    --gold: #bf9b30;
+
+    /* --success is deliberately a different hue family (moss/olive, ~H100)
+       from --accent (forest green, ~H139) — a status colour must not read
+       as the brand accent. Do not "harmonize" this back toward --accent. */
+    --success: #67a04b;
+    /* --warning and --error are separated by LIGHTNESS, not just hue —
+       hue is exactly what deuteranopia removes. At the original #d9b64a /
+       #e06060 the two simulate (Vienot 1999 deuteranopia projection) to
+       #cdcf78 / #bdc560 — CIE76 delta-E 8.4, both read as the same muddy
+       olive. This pair simulates to delta-E ~24 apart while each still
+       holds 4.5:1+ against --paper #161310 and remains recognisably
+       amber / red to normal vision (delta-E ~62, unchanged from before).
+       Do not converge these back toward equal lightness. */
+    --warning: #e4cb81;
+    --error: #dd5555;
+
+    --shadow-paper: 0 1px 2px rgba(0,0,0,0.4), 0 10px 26px -14px rgba(0,0,0,0.6);
+    --shadow-lifted: 0 2px 4px rgba(0,0,0,0.5), 0 22px 42px -16px rgba(0,0,0,0.7);
+    --shadow-nav: 0 6px 24px -16px rgba(0,0,0,0.5);
+    --shadow-modal: 0 4px 24px -4px rgba(0,0,0,0.6);
+  }
+}
+
+[data-theme="dark"] {
+  /* Dark mode — "Lamplight Archive" */
+  --paper: #161310;
+  --paper-raised: #1f1b16;
+  --paper-recessed: #100e0b;
+  --ink: #e8e2d3;
+  --ink-soft: #beb5a3;
+  --ink-faint: #a39a88;
+  --rule: #38332b;
+  --rule-dark: #5b554a;
+  --gold: #bf9b30;
+
+  /* See the matching comment in the prefers-color-scheme block above —
+     --success is a distinct hue family from --accent, not a rounding
+     error. */
+  --success: #67a04b;
+  /* See the matching comment in the prefers-color-scheme block above —
+     --warning and --error are separated by lightness so they stay
+     distinguishable under deuteranopia simulation (delta-E ~24), not
+     just hue. Do not converge these back toward equal lightness. */
+  --warning: #e4cb81;
+  --error: #dd5555;
+
+  --shadow-paper: 0 1px 2px rgba(0,0,0,0.4), 0 10px 26px -14px rgba(0,0,0,0.6);
+  --shadow-lifted: 0 2px 4px rgba(0,0,0,0.5), 0 22px 42px -16px rgba(0,0,0,0.7);
+  --shadow-nav: 0 6px 24px -16px rgba(0,0,0,0.5);
+  --shadow-modal: 0 4px 24px -4px rgba(0,0,0,0.6);
+}

@@ -1,0 +1,184 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ *
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/* toast.css — transient status notices for a completed or failed action.
+
+   Shared across all four apps once adopted (today: artifice-draft only —
+   see the ui-ux brief this file was written against). Consumes --accent /
+   --accent-deep / --accent-wash by inheritance from whichever app.css loads
+   before this file (Design_Philosophy.md §12, tokens.css:112-131), the same
+   convention byom.css uses; this file declares none of the three itself.
+
+   Promoted from two near-identical per-app implementations
+   (artifice-ocr's web/static/js/toast.js + a TOAST SYSTEM block in its
+   app.css, and an inline `toast()` in artifice-transcribe's app.js with a
+   byte-for-byte-similar block in its app.css — transcribe's block is the
+   more token-correct of the two, e.g. var(--radius-lg) and
+   var(--duration-fast)/var(--ease-primary) where ocr hardcodes 8px/0.2s
+   ease). This file keeps their established visual vocabulary — fixed
+   top-right stack, border-left tone accent, slide-and-fade entrance — so a
+   later migration of ocr/transcribe onto this file is a drop-in, not a
+   redesign. It changes three things, deliberately:
+
+   1. Tone colour now comes from the actual semantic tokens (--success /
+      --warning / --error), not --accent (brand colour) for "positive" and
+      the decorative --gold for "warning". tokens.css:23-32 documents
+      --success as a hue family deliberately distinct from --accent
+      specifically so a status colour never reads as the brand accent — the
+      two per-app toasts predate that being consistently applied. byom.css's
+      own #byomResult (the closer analog: reporting the outcome of an
+      action, not just an in-progress state) already uses --success/--error
+      this way; this file follows that precedent rather than the older
+      toast code's.
+   2. Every toast carries role="status" or role="alert" (JS-set — see
+      toast.js) — neither prior implementation had any ARIA at all, so
+      nothing reached a screen reader when a job finished or failed.
+   3. A visible, keyboard-reachable dismiss control, sized to
+      --control-height like every other icon-only control in this codebase
+      (.byom-close, .nav-byom) — neither prior implementation had a manual
+      dismiss at all, which is why an error toast could time out before
+      being read. See toast.js for the corresponding decision to make error
+      toasts non-auto-dismissing by default.
+
+   The design-system's Toast.jsx / Toast.prompt.md describe a bottom-corner
+   placement; the two implementations actually shipped both use top-right
+   and this file follows them, per the design-system-is-not-the-runtime
+   rule (design-system/ is prototyping source, packages/shared-ui/ is what
+   ships) — flagged in the report as a discrepancy worth reconciling in
+   design-system's docs, not silently resolved here. */
+
+.toast-container {
+  position: fixed;
+  /* Keep transient notices below the suite title bar so model and window
+     controls remain clickable while a notice is visible. */
+  top: calc(var(--shell-title, 3rem) + var(--space-5));
+  right: var(--space-5);
+  /* Above the app's own modal overlay (draft's .modal-overlay: 500) and
+     skip-link (600, apps/artifice-draft/.../app.css:125) — a status about a
+     background job (export finished, save failed) must stay visible even
+     if the user has a dialog open, which is exactly when a job most often
+     completes unattended. */
+  z-index: 700;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  /* The stack itself never intercepts pointer events (so it cannot block
+     clicks on whatever sits underneath it edge-to-edge); each toast opts
+     back in below. */
+  pointer-events: none;
+  max-width: calc(100vw - 2 * var(--space-5));
+}
+
+.toast {
+  pointer-events: auto;
+  max-width: 24rem;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-5);
+  background-color: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule-dark);
+  /* §5 "Toast notifications | radius-lg (12px)". */
+  border-radius: var(--radius-lg);
+  /* §6 depth table: "3 — Nav/Toast | paper-raised | shadow-nav". */
+  box-shadow: var(--shadow-nav);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  animation: toast-in var(--duration-fast) var(--ease-primary);
+}
+
+.toast[data-tone="success"] { border-left-color: var(--success); }
+.toast[data-tone="warning"] { border-left-color: var(--warning); }
+.toast[data-tone="error"]   { border-left-color: var(--error); }
+/* data-tone="info" (and the unset default) keeps the neutral --rule-dark
+   set above — an info toast is not a status verdict, so it gets no
+   semantic colour, matching .byom-detect's own neutral resting state. */
+
+.toast.toast-out {
+  animation: toast-out var(--duration-fast) var(--ease-primary) forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(1.5rem); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(1.5rem); }
+}
+
+/* Design_Philosophy.md §7 / §11.4: no animation without a reduced-motion
+   fallback. toast.js also checks prefersReducedMotion() itself before
+   scheduling the exit animation's wait, so a reduced-motion dismissal
+   removes the node immediately rather than waiting out a transition that
+   this rule has already zeroed. */
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+  .toast.toast-out { animation: none; opacity: 0; }
+}
+
+.toast-icon {
+  flex: 0 0 auto;
+  display: flex;
+  color: var(--ink-faint);
+  margin-top: 0.1rem;
+}
+.toast[data-tone="success"] .toast-icon { color: var(--success); }
+.toast[data-tone="warning"] .toast-icon { color: var(--warning); }
+.toast[data-tone="error"]   .toast-icon { color: var(--error); }
+
+.toast-message {
+  flex: 1;
+  margin: 0;
+  line-height: 1.5;
+  /* Long unbroken tokens (a stack trace fragment, a filename) must not
+     push the stack wider than max-width above and off the viewport edge. */
+  overflow-wrap: anywhere;
+}
+
+/* Icon-only control — accessible name comes from aria-label on the button
+   (see toast.js), never from the icon alone (§8.18). Sized to
+   --control-height like every other icon-only control in this codebase
+   (.byom-close, .nav-byom) rather than a smaller "chrome" size: WCAG 2.5.5
+   applies to this button exactly as it does to a nav item, and the note in
+   this repo's own CLAUDE.md is that min-height is a floor a taller sibling
+   can still overshoot — using height, not min-height, avoids that here. */
+.toast-close {
+  appearance: none;
+  flex: 0 0 auto;
+  width: var(--control-height);
+  height: var(--control-height);
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--ink-faint);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+              border-color var(--duration-fast) ease;
+}
+.toast-close:hover {
+  background-color: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+.toast-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 30rem) {
+  .toast-container {
+    left: var(--space-4);
+    right: var(--space-4);
+    max-width: none;
+  }
+  .toast { max-width: none; }
+}

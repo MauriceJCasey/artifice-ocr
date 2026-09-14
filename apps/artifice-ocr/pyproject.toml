@@ -1,0 +1,90 @@
+[project]
+name = "artifice-ocr"
+version = "0.4.0"
+description = "A pipeline for historical document OCR and translation."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+dependencies = [
+    "typer",
+    "ollama",
+    "openai",
+    "python-dotenv",
+    "pyyaml",
+    "PyMuPDF",
+    "Pillow",
+    "numpy",
+    "reportlab",
+    "huggingface_hub",
+    "artifice-secure-io>=0.2.0",
+    "artifice-output-layout>=0.1.0",
+    "artifice-shared-ui>=0.2.0",
+    "artifice-model-harness>=0.2.0",
+    "jinja2>=3.0",
+]
+authors = [
+    {name = "Maurice J. Casey"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+keywords = [
+    "OCR",
+    "historical documents",
+    "document processing",
+    "digital humanities",
+]
+
+[project.urls]
+Homepage = "https://github.com/Muggwoffin/artifice-suite"
+Repository = "https://github.com/Muggwoffin/artifice-suite"
+Issues = "https://github.com/Muggwoffin/artifice-suite/issues"
+
+[project.optional-dependencies]
+web = [
+    "fastapi",
+    "httpx>=0.27",
+    "uvicorn[standard]",
+    # Required by the File()/UploadFile handler at web/routers/queue.py — FastAPI
+    # refuses to start without it ("Form data requires python-multipart").
+    "python-multipart>=0.0.9",
+]
+window = [
+    "pywebview>=5.0",
+]
+
+[project.scripts]
+artifice-ocr = "artifice_ocr.cli:app"
+artifice-ocr-web = "artifice_ocr.web.server:main"
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"artifice_ocr.web" = ["static/**", "templates/**/*.html", "fonts/**"]
+"artifice_ocr.prompts" = ["*.txt"]
+"artifice_ocr.configs" = ["*.yaml"]
+"artifice_ocr.pagexml" = ["schema/*.xsd"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "live_interop: opt-in test requiring real third-party desktop/model applications",
+    "ui_stress: deterministic browser and state-machine stress tests",
+]
+addopts = "-m 'not live_interop and not ui_stress'"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.21.0",
+    "pywebview>=5.0",
+]

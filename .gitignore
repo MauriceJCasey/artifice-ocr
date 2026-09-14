@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local secrets / environment
+.env
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated pipeline output (not source)
+apps/*/output/
+apps/*/test_output/
+apps/*/data/
+apps/*/uploads/
+
+# Editors / OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<PcGts xmlns="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15 http://schema.primaresearch.org/PAGE/gts/pagecontent/2019-07-15/pagecontent.xsd">
+  <Metadata>
+    <Creator>Artifice</Creator>
+    <Created>2026-09-14T10:30:00Z</Created>
+    <LastChange>2026-09-14T10:30:00Z</LastChange>
+  </Metadata>
+  <Page imageFilename="notes.jpg" imageWidth="997" imageHeight="613">
+    <ReadingOrder>
+      <OrderedGroup id="reading-order">
+        <RegionRefIndexed index="0" regionRef="main-text" />
+        <RegionRefIndexed index="1" regionRef="margin-note" />
+      </OrderedGroup>
+    </ReadingOrder>
+    <TextRegion id="main-text" type="paragraph" custom="structure {type:unclassified;}">
+      <Coords points="80,40 700,40 700,540 80,540" conf="0.91" />
+      <TextLine id="line-001">
+        <Coords points="90,70 680,70 680,110 90,110" />
+        <Baseline points="92,103 678,104" />
+        <TextEquiv index="0">
+          <Unicode>A manuscript line</Unicode>
+        </TextEquiv>
+      </TextLine>
+      <TextEquiv index="0">
+        <Unicode>A manuscript line</Unicode>
+      </TextEquiv>
+    </TextRegion>
+    <TextRegion id="margin-note" type="marginalia" custom="structure {type:marginalia;}">
+      <Coords points="730,100 970,90 975,400 740,410" />
+      <TextEquiv index="0">
+        <Unicode>Nota bene</Unicode>
+      </TextEquiv>
+    </TextRegion>
+  </Page>
+</PcGts>
