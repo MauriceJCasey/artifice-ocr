@@ -2,34 +2,30 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Bi-directional Tropy JSON-LD file bridge.
+"""Tropy JSON-LD import bridge.
 
 Replaces the 7-route SQLite read/write integration (``tropy_read.py`` +
 ``tropy_write.py`` + ``tropy.py``) with a frictionless file-based workflow:
 
-1. **Import**: User exports from Tropy (File → Export → JSON-LD), provides
-   the file to artifice-ocr.  Relative photos are resolved relative to the
-   JSON-LD file's directory.  Absolute photos are validated by
-   ``_tropy_pathcheck`` against a blocklist of system directories — NAS
-   mounts, external drives and research archives are explicitly permitted.
+**Import**: the user exports from Tropy (File → Export → JSON-LD) and
+provides the file to artifice-ocr.  Relative photos are resolved relative
+to the JSON-LD file's directory.  Absolute photos are validated by
+``_tropy_pathcheck`` against a blocklist of system directories — NAS
+mounts, external drives and research archives are explicitly permitted.
 
-2. **Export**: artifice-ocr generates a JSON-LD file the user imports back
-   into Tropy (File → Import Items…). The item envelope preserves Tropy's
-   own ``photo`` / ``note`` / ``template`` structure so the round-trip is
-   transparent.
+The export direction (generating a JSON-LD file for Tropy to import back)
+was removed in a simplification pass and is deliberately absent here.
 
 This module is library-level — no FastAPI imports, same discipline as the
 old ``tropy_read.py``.
 """
 
-import copy
 import hashlib
 import json
 import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -600,205 +596,6 @@ def photos_to_job_items(preview: ImportPreview, groups: list[str] | None = None)
             )
         )
     return result
-
-
-# --------------------------------------------------------------------------- #
-# export
-# --------------------------------------------------------------------------- #
-
-
-@dataclass(frozen=True)
-class ExportPhoto:
-    """One photo to include in a Tropy export."""
-
-    abs_path: Path
-    text: str
-    label: str
-    language: str
-    item_node: dict | None
-    group: str | None
-    photo_index: int | None
-    path_rel: str | None
-    checksum: str
-    mimetype: str
-    page: int | None = None
-
-
-def _note_html(text: str) -> str:
-    """Build HTML note content from plain text."""
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    if lines:
-        paras = "".join(f"<p>{escape(line)}</p>" for line in lines)
-    else:
-        paras = f"<p>{escape(text.strip())}</p>"
-    return paras
-
-
-def _note_node(text: str, language: str) -> dict:
-    lang = (language or "en").strip().lower() or "en"
-    return {
-        "@type": "Note",
-        "text": {"@value": text, "@language": lang},
-        "html": {"@value": _note_html(text), "@language": lang},
-    }
-
-
-def _md5_checksum(path: Path) -> str | None:
-    """Stream the file and compute its MD5 checksum."""
-    try:
-        h = hashlib.md5()
-        with open(path, "rb") as f:
-            while chunk := f.read(8192):
-                h.update(chunk)
-        return h.hexdigest()
-    except OSError:
-        return None
-
-
-def _mimetype_from_suffix(path: Path) -> str:
-    suffix = path.suffix.lower()
-    return {
-        ".pdf": "application/pdf",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".tif": "image/tiff",
-        ".tiff": "image/tiff",
-        ".gif": "image/gif",
-    }.get(suffix, "application/octet-stream")
-
-
-def _generator_string() -> str:
-    """Return 'artifice-ocr <version>' without importing the package at module level."""
-    try:
-        from importlib.metadata import version
-
-        return f"artifice-ocr {version('artifice-ocr')}"
-    except Exception:
-        return "artifice-ocr"
-
-
-def resolve_export_text(
-    output_dir: str | Path,
-    stem: str,
-    *,
-    stage: str = "cleaned",
-    fallback: str = "",
-) -> str:
-    """Text for one Tropy export note: PAGE TextEquiv index first, fallback last.
-
-    PAGE is the authoritative record, so the JSON-LD export reads the requested
-    stage's index (raw/cleaned/translated) before any legacy ``.txt`` value.
-    Returns *fallback* when no PAGE document exists (a pre-PAGE folder) or the
-    selected index is empty — callers pass the legacy ``.txt`` projection as the
-    fallback.
-    """
-    from .output import find_page_document, page_stage
-
-    doc = find_page_document(output_dir, stem)
-    if doc is None:
-        return fallback
-    return doc.text(page_stage(stage)) or fallback
-
-
-def build_export(photos: list[ExportPhoto]) -> dict:
-    """Build a Tropy JSON-LD export document from :class:`ExportPhoto` objects.
-
-    Photos are grouped by *group* (Tropy-sourced) or by *abs_path* (ad-hoc,
-    one item per file). Tropy-sourced groups deep-copy the original
-    ``item_node`` and rebuild the ``photo`` list to contain only photos
-    that carry text.
-    """
-    # Partition into Tropy-sourced and ad-hoc
-    tropy_groups: dict[str, list[ExportPhoto]] = {}  # group -> photos
-    ad_hoc: list[ExportPhoto] = []
-
-    for ep in photos:
-        if ep.group is not None:
-            tropy_groups.setdefault(ep.group, []).append(ep)
-        else:
-            ad_hoc.append(ep)
-
-    graph: list[dict] = []
-
-    # Tropy-sourced groups
-    for _group, eps in tropy_groups.items():
-        eps_with_text = [ep for ep in eps if ep.text.strip()]
-        if not eps_with_text:
-            continue
-        # All eps in a group share the same item_node — deep-copy the first
-        base_node = eps_with_text[0].item_node or {}
-        item = copy.deepcopy(base_node)
-
-        # Preserve each original photo node and append the OCR note. A minimal
-        # rebuild loses PDF page identity, templates, selections and metadata.
-        original_photos = _as_list(item.get("photo"))
-        photo_list: list[dict] = []
-        for ep in eps_with_text:
-            if ep.photo_index is not None and 0 <= ep.photo_index < len(original_photos):
-                photo_entry = copy.deepcopy(original_photos[ep.photo_index])
-            else:
-                photo_entry = {"@type": "Photo"}
-            photo_entry["path"] = str(ep.abs_path)
-            if ep.checksum:
-                photo_entry["checksum"] = ep.checksum
-            if ep.mimetype:
-                photo_entry["mimetype"] = ep.mimetype
-            if ep.page is not None:
-                photo_entry["page"] = ep.page
-            notes = _as_list(photo_entry.get("note"))
-            notes.append(_note_node(ep.text, ep.language))
-            photo_entry["note"] = notes
-            photo_list.append(photo_entry)
-
-        item["photo"] = photo_list
-        graph.append(item)
-
-    # Ad-hoc groups: one item per file, retaining every PDF page.
-    ad_hoc_files: dict[str, list[ExportPhoto]] = {}
-    for ep in ad_hoc:
-        if ep.text.strip():
-            ad_hoc_files.setdefault(str(ep.abs_path), []).append(ep)
-
-    for abs_str, eps in ad_hoc_files.items():
-        source = eps[0].abs_path
-        photo_list = []
-        for ep in sorted(eps, key=lambda value: value.page if value.page is not None else -1):
-            checksum = ep.checksum or _md5_checksum(ep.abs_path)
-            mimetype = ep.mimetype or _mimetype_from_suffix(ep.abs_path)
-            photo_entry = {
-                "@type": "Photo",
-                "path": abs_str,
-                "protocol": "file",
-                "template": "https://tropy.org/v1/templates/photo",
-                "mimetype": mimetype,
-                "note": [_note_node(ep.text, ep.language)],
-            }
-            if ep.page is not None:
-                photo_entry["page"] = ep.page
-            if checksum:
-                photo_entry["checksum"] = checksum
-            photo_list.append(photo_entry)
-
-        graph.append(
-            {
-                "@type": "Item",
-                "title": source.stem,
-                "template": "https://tropy.org/v1/templates/generic",
-                "photo": photo_list,
-            }
-        )
-
-    return {
-        "@context": TROPY_CONTEXT,
-        "@graph": graph,
-        "generator": _generator_string(),
-    }
-
-
-def export_json(photos: list[ExportPhoto]) -> str:
-    """Return the Tropy JSON-LD export as a formatted string."""
-    return json.dumps(build_export(photos), indent=2, ensure_ascii=False)
 
 
 # --------------------------------------------------------------------------- #

@@ -292,39 +292,6 @@ def test_tropy_note_queue_reads_page_index(tmp_path, monkeypatch):
         assert entries[0].text == expected
 
 
-def test_tropy_jsonld_export_text_reads_page_index(tmp_path):
-    from artifice_ocr.tropy_jsonld import ExportPhoto, build_export, resolve_export_text
-
-    out = tmp_path / "out"
-    _write_page_with_stages(out, "page")
-
-    assert resolve_export_text(out, "page", stage="cleaned") == "PAGE CLEANED"
-    assert resolve_export_text(out, "page", stage="cleaned", fallback="fb") == "PAGE CLEANED"
-
-    # And the fallback path still works when PAGE is absent.
-    assert resolve_export_text(tmp_path / "nope", "missing", stage="cleaned", fallback="legacy") == "legacy"
-
-    # End-to-end: the JSON-LD note text is sourced from PAGE.
-    f = tmp_path / "doc.pdf"
-    f.write_bytes(b"%PDF")
-    photos = [
-        ExportPhoto(
-            abs_path=f,
-            text=resolve_export_text(out, "page", stage="cleaned", fallback=""),
-            label="p",
-            language="de",
-            item_node={"@type": "Item", "title": "Doc"},
-            group="g",
-            photo_index=0,
-            path_rel="d",
-            checksum="c",
-            mimetype="m",
-        )
-    ]
-    note = build_export(photos)["@graph"][0]["photo"][0]["note"][0]
-    assert note["text"]["@value"] == "PAGE CLEANED"
-
-
 # --------------------------------------------------------------------------- #
 # 4. PAGE export path (distinct from persistence)
 # --------------------------------------------------------------------------- #

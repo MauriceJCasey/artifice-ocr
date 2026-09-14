@@ -9,6 +9,7 @@ starts third-party desktop software and never writes to a user's Tropy profile.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -26,7 +27,7 @@ import pytest
 import uvicorn
 from artifice_ocr import config
 from artifice_ocr.tropy_api import connect
-from artifice_ocr.tropy_jsonld import ExportPhoto, build_export
+from artifice_ocr.tropy_jsonld import TROPY_CONTEXT
 from artifice_ocr.web.routers import tropy_notes
 from artifice_ocr.web.runtime import state
 from artifice_ocr.web.server import app
@@ -224,22 +225,44 @@ def test_real_tropy_browse_queue_and_note_round_trip(tmp_path):
     fixture_image = Image.new("RGB", (640, 360), "white")
     ImageDraw.Draw(fixture_image).text((24, 24), "Artifice live Tropy contract", fill="black")
     fixture_image.save(image, quality=90)
-    exported = build_export(
-        [
-            ExportPhoto(
-                abs_path=image,
-                text="Imported OCR note",
-                label="Contract image",
-                language="en",
-                item_node=None,
-                group=None,
-                photo_index=None,
-                path_rel=None,
-                checksum="",
-                mimetype="image/jpeg",
-            )
-        ]
-    )
+    checksum = hashlib.md5(image.read_bytes()).hexdigest()
+    try:
+        from importlib.metadata import version
+
+        generator = f"artifice-ocr {version('artifice-ocr')}"
+    except Exception:
+        generator = "artifice-ocr"
+    exported = {
+        "@context": TROPY_CONTEXT,
+        "@graph": [
+            {
+                "@type": "Item",
+                "title": image.stem,
+                "template": "https://tropy.org/v1/templates/generic",
+                "photo": [
+                    {
+                        "@type": "Photo",
+                        "path": str(image),
+                        "protocol": "file",
+                        "template": "https://tropy.org/v1/templates/photo",
+                        "mimetype": "image/jpeg",
+                        "note": [
+                            {
+                                "@type": "Note",
+                                "text": {"@value": "Imported OCR note", "@language": "en"},
+                                "html": {
+                                    "@value": "<p>Imported OCR note</p>",
+                                    "@language": "en",
+                                },
+                            }
+                        ],
+                        "checksum": checksum,
+                    }
+                ],
+            }
+        ],
+        "generator": generator,
+    }
 
     port = _free_port()
     base_url = f"http://127.0.0.1:{port}"
