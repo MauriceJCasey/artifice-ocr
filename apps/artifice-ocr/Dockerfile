@@ -1,3 +1,13 @@
+# SPDX-FileCopyrightText: 2026 Maurice Casey
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Standalone-repo Dockerfile for artifice-ocr. Copied into place by
+# scripts/export-to-public-repos.sh -- edit HERE, not in the public repo,
+# since a re-export overwrites apps/artifice-ocr/Dockerfile with this file.
+# The version rsync'd straight from apps/artifice-ocr/Dockerfile in the
+# monorepo assumes the full four-app workspace (draft/graph/transcribe
+# pyproject.toml COPY lines) and does not build in the single-app repo.
+
 # ---- builder ----
 FROM python:3.12-slim AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.11.32 /uv /usr/local/bin/uv
