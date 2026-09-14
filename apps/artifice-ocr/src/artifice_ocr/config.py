@@ -205,6 +205,30 @@ _DEFAULTS: dict[str, Any] = {
     # through the native folder dialog (the consent step), so a Tropy project
     # on an external drive can be opened without the env var.
     "approved_folders": [],
+    # Optional segmentation pre-processing (Commit 3+). Disabled by default:
+    # the whole-page OCR call and its legacy outputs are byte-compatible with
+    # everything produced before this feature existed, and no segmentation
+    # model is installed by default. See docs/PRE_PROCESSING_PLAN.md.
+    "segmentation_enabled": False,
+    # The provider that supplies page regions when segmentation is enabled.
+    # "passthrough" is the always-available, dependency-free provider that
+    # returns one full-page region — it exercises the whole region pipeline
+    # without installing a real model. Commit 4+ add DocLayout-YOLO, Kraken,
+    # and diff-residual providers.
+    "segmentation_provider": "passthrough",
+    # Provider-specific options as a flat dict, keyed by each provider's own
+    # documented option names (e.g. {"device": "cpu", "confidence_threshold":
+    # 0.4} for DocLayout-YOLO). Flat rather than per-provider-prefixed to
+    # match the existing flat-key settings style. Providers ignore keys they
+    # do not understand, so a shared settings file stays valid across
+    # providers.
+    "segmentation_options": {},
+    # Percentage of a region's own extent added on each side when cropping it
+    # for OCR, clamped to the page bounds. Small because a crop must not
+    # swallow a neighbouring region's text; a tight annotation (an underline,
+    # a marginal note) still wants a little surrounding context for the
+    # vision model.
+    "segmentation_crop_padding_percent": 2.0,
 }
 
 _USER_DIR = Path.home() / ".artifice_ocr"
@@ -263,6 +287,10 @@ PERSISTED_KEYS = (
     "tropy_live_browse_enabled",
     "tropy_api_port",
     "approved_folders",
+    "segmentation_enabled",
+    "segmentation_provider",
+    "segmentation_options",
+    "segmentation_crop_padding_percent",
 )
 
 _config_cache: dict[str, Any] | None = None

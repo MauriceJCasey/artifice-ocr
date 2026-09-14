@@ -395,6 +395,36 @@ class JobRunner:
                 if title_result.get("_page_document") is not None:
                     item.page_document = title_result["_page_document"]
 
+    def _phase_title(self) -> None:
+        """Pass 3: Title generation every file strictly sequentially."""
+        if "title" not in self.stages:
+            return
+        for item in self.items:
+            if not self._begin_item(item):
+                continue
+            cleaned = item.results.get("cleaned")
+            if cleaned is None:
+                self._finish_item(item, State.FAILED)
+                continue
+            title_result = self._run_stage(
+                item,
+                "title",
+                lambda: run_title_step(
+                    cleaned,
+                    item.stem,
+                    self.output_dir,
+                    skip_title="title" not in self.stages,
+                    resume=self._resume_enabled,
+                    force=self.force,
+                ),
+                chars_key="title",
+            )
+            if title_result is None:
+                self._finish_item(item, State.FAILED)
+            else:
+                item.results["title"] = title_result
+                item.language = title_result.get("language", item.language)
+
     def _phase_translate(self) -> None:
         """Pass 4: Translate every file strictly sequentially."""
         if "translate" not in self.stages:

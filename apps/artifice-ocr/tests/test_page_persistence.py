@@ -32,12 +32,12 @@ def _mock_model_stages(monkeypatch) -> None:
     makes no real inference call."""
     from artifice_ocr.stages import cleanup, ocr, translate
 
-    monkeypatch.setattr(ocr, "_ocr_single_image", lambda path, orientation=1: ("RAW TEXT.", "ollama"))
+    monkeypatch.setattr(
+        ocr, "_ocr_single_image", lambda path, orientation=1: ("RAW TEXT.", "ollama")
+    )
     monkeypatch.setattr(cleanup, "_cleanup_with_chunking", lambda text, *a, **k: text)
     monkeypatch.setattr(translate, "detect_language", lambda text, doc_type="default": "de")
-    monkeypatch.setattr(
-        translate, "_translate_with_chunking", lambda text, *a, **k: "ÜBERSETZT."
-    )
+    monkeypatch.setattr(translate, "_translate_with_chunking", lambda text, *a, **k: "ÜBERSETZT.")
 
 
 def _normalize_sidecar(path: Path) -> dict:
@@ -72,8 +72,12 @@ def test_pipeline_legacy_outputs_match_direct_perform(tmp_path, monkeypatch):
 
     out_direct = tmp_path / "out-direct"
     raw = ocr_stage.perform(str(img), output_dir=str(out_direct))
-    cleaned = cleanup_stage.perform(raw["extracted_text"], source_file=str(img), output_dir=str(out_direct))
-    translate_stage.perform(cleaned["cleaned_text"], source_file=str(img), output_dir=str(out_direct))
+    cleaned = cleanup_stage.perform(
+        raw["extracted_text"], source_file=str(img), output_dir=str(out_direct)
+    )
+    translate_stage.perform(
+        cleaned["cleaned_text"], source_file=str(img), output_dir=str(out_direct)
+    )
 
     for stage in ("raw_ocr", "cleaned", "translated"):
         p_txt = out_pipeline / stage / "text" / f"{img.stem}.txt"
@@ -182,8 +186,8 @@ def test_pre_page_folder_resume_does_not_write_page(tmp_path, monkeypatch):
 
 
 def _write_page_with_stages(out: Path, stem: str) -> None:
-    from artifice_ocr.pagexml import PageDocument, TextRegion, artifice_custom, write
     from artifice_ocr.output import page_path
+    from artifice_ocr.pagexml import PageDocument, TextRegion, artifice_custom, write
 
     doc = PageDocument(
         image_filename="p.png",

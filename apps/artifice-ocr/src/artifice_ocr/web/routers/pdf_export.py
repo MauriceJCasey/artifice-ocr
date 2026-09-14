@@ -188,9 +188,7 @@ def page_export_start(req: PageExportRequest) -> dict:
             status_code=400,
             detail="No pages selected — `stems` must be a non-empty list.",
         )
-    export_dir, exported, skipped = export_page_xml(
-        req.stems, output_dir=output_dir, output=output
-    )
+    export_dir, exported, skipped = export_page_xml(req.stems, output_dir=output_dir, output=output)
     # `skipped` non-empty is a partial result, not a failure — report 200.
     return {
         "export_dir": str(export_dir),

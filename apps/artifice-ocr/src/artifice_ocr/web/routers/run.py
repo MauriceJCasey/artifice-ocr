@@ -7,6 +7,7 @@
 from artifice_output import ProjectLayout
 from fastapi import APIRouter, HTTPException
 
+from ... import config
 from ...jobs import STAGES
 from ..models import SkipRequest, StartRunRequest
 from ..runtime import state
@@ -24,6 +25,16 @@ def start_run(req: StartRunRequest) -> dict:
     if req.project or req.output_dir == "output":
         layout = ProjectLayout(output_dir, req.project or "OCR project", create=True)
         output_dir = str(layout.project_dir)
+    # Segmentation is a config.py setting (Commit 3+), read by pipeline.py via
+    # cfg("segmentation_enabled") — not a start_run() argument, which only
+    # accepts stages/output_dir/force. Always set segmentation_enabled
+    # explicitly from the request rather than only when a provider is chosen:
+    # otherwise a prior run's enabled setting would silently persist and
+    # re-enable segmentation for a run where the toggle is now off.
+    overrides = {"segmentation_enabled": bool(req.segmentation_provider)}
+    if req.segmentation_provider:
+        overrides["segmentation_provider"] = req.segmentation_provider
+    config.apply_overrides(overrides)
     try:
         state.start_run(stages=stages, output_dir=output_dir, force=req.force)
     except (RuntimeError, ValueError) as exc:

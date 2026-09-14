@@ -57,6 +57,62 @@ web = [
 window = [
     "pywebview>=5.0",
 ]
+# DocLayout-YOLO document-layout segmentation (Commit 4 of
+# docs/PRE_PROCESSING_PLAN.md). Imported lazily inside
+# artifice_ocr.segmentation.doclayout_yolo only. Version confirmed against
+# PyPI (latest release at implementation time); the `YOLOv10` inference API
+# is stable across the 0.0.x line.
+segmentation-doclayout-yolo = [
+    "doclayout-yolo>=0.0.4",
+]
+# Kraken BLLA segmentation (Commit 5 of docs/PRE_PROCESSING_PLAN.md).
+# Imported lazily inside artifice_ocr.segmentation.kraken only.
+#
+# ⚠ KNOWN UNRESOLVED CONFLICT — FLAGGED FOR MAINTAINER (2026-09-14):
+# No published Kraken version coexists with artifice-transcribe's ASR stack
+# in the shared uv workspace lock:
+#   - Kraken 6.x pins numpy~=2.0.0, but whisperx>=3.8.0 (asr/asr-cuda) needs
+#     numpy>=2.1.0 — irreconcilable.
+#   - Kraken 7.0.x pins lightning==2.6.1, but nemo-toolkit[asr]
+#     (asr-parakeet) needs lightning<=2.4.0 — irreconcilable.
+#   - Kraken 7.1.x pins torch>=2.9, but asr/asr-cuda pin torch<2.9 —
+#     irreconcilable.
+# So this extra (and, transitively, the `segmentation` umbrella) makes
+# `uv sync`/`uv lock` fail until the maintainer picks a resolution: declare a
+# root-level `[tool.uv] conflicts` between the segmentation and asr extras,
+# relax transcribe's pins, or install the two stacks in separate environments.
+#
+# Pin below is the closest available line: Kraken 6.0.3 is the latest 6.x on
+# PyPI (6.0.4 is a Git tag that was never published). Its torch>=2.4,<=2.9 and
+# lightning~=2.4.0 are both transcribe-compatible; only numpy~=2.0.0 clashes.
+# The `python_version < '3.13'` marker is required because Kraken 6.x declares
+# python_requires <3.13 (the suite itself targets 3.11/3.12). Its
+# blla.segment API and bundled blla.mlmodel are unchanged from 7.x.
+segmentation-kraken = [
+    "kraken>=6.0.3,<7; python_version < '3.13'",
+]
+# Diff-residual annotation detection (Commit 6 of docs/PRE_PROCESSING_PLAN.md).
+# Imported lazily inside artifice_ocr.segmentation.diff_residual only. Headless
+# OpenCV (no GUI runtime, so no libGL/Qt needed) still ships ORB and — since
+# OpenCV 4.4 — SIFT in the main module. No upper bound: the provider uses only
+# long-stable core APIs (phaseCorrelate, ORB_create, findHomography,
+# connectedComponentsWithStats, fitLine, warp*) and checks SIFT availability at
+# runtime, and its test suite passes against both opencv-python-headless
+# 4.14.0.94 and 5.0.0.93. opencv-python-headless was already a transitive dep
+# (albumentations via doclayout-yolo); this extra only adds a marker, so it
+# keeps the shared lock's existing 5.0.x resolution rather than forking it.
+# numpy is already a base dependency; opencv-python-headless>=4.10 is the first
+# line that supports numpy 2.x (the workspace lock sits on numpy 2.0.2).
+segmentation-diff-residual = [
+    "opencv-python-headless>=4.10",
+]
+# Umbrella extra for every segmentation provider. Commit 6 (diff-residual)
+# adds one line here rather than restructure it.
+segmentation = [
+    "artifice-ocr[segmentation-doclayout-yolo]",
+    "artifice-ocr[segmentation-kraken]",
+    "artifice-ocr[segmentation-diff-residual]",
+]
 
 [project.scripts]
 artifice-ocr = "artifice_ocr.cli:app"

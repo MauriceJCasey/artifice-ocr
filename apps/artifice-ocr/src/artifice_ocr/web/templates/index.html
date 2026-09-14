@@ -124,10 +124,21 @@
         <div class="run-row">
           <strong style="font-size:var(--text-sm);">Stages</strong>
           <label class="check" title="OCR is required for every new run"><input type="checkbox" id="stage-ocr" checked disabled> OCR <span class="dim">required</span></label>
-          <label class="check"><input type="checkbox" id="stage-cleanup" checked> Cleanup</label>
+          <label class="check"><input type="checkbox" id="stage-cleanup"> Cleanup</label>
           <label class="check"><input type="checkbox" id="stage-title"> Generate titles</label>
           <label class="check"><input type="checkbox" id="stage-translate"> Translate</label>
           <label class="check" title="Ignore existing output and OCR/clean/translate every selected file again."><input type="checkbox" id="stage-force"> Force re-run (ignore existing output)</label>
+        </div>
+
+        <div class="segmentation-row" id="segmentation-controls">
+          <strong style="font-size:var(--text-sm);">Segmentation</strong>
+          <label class="check"><input type="checkbox" id="stage-segmentation"> Enable region segmentation</label>
+          <label id="seg-provider-wrap" style="display:none;">
+            Provider
+            <select id="seg-provider" class="select" style="min-height:var(--control-height);">
+              <option value="">Loading providers&hellip;</option>
+            </select>
+          </label>
         </div>
 
         <div class="output-row">
@@ -173,6 +184,7 @@
             <div class="image-meta-overlay" id="preview-meta-overlay"></div>
           </div>
         </div>
+        <div class="compare-resize-handle" id="preview-resize-handle" aria-label="Drag to resize" role="separator" tabindex="-1"></div>
         <div class="compare-bar">
           <h2 class="compare-title">No document selected</h2>
           <select id="preview-item-select" class="select"></select>
@@ -182,11 +194,22 @@
           </label>
           <button class="btn" id="btn-reprocess" type="button" disabled style="margin-left:0.5rem;" title="Re-run downstream stages after correction">Re-process</button>
           <span class="spacer"></span>
+          <div class="review-mode-tabs" id="preview-review-mode" style="display:none;">
+            <button type="button" class="btn btn-small review-mode-btn active" data-mode="whole">Whole page</button>
+            <button type="button" class="btn btn-small review-mode-btn" data-mode="regions">Regions</button>
+          </div>
+        </div>
+        <div class="compare-panes-wrap">
+        <div class="pane-stage-tabs" id="preview-pane-stage-tabs" role="group" aria-label="Select text stage">
+          <button type="button" class="btn btn-small pane-stage-btn active" data-pane="raw" draggable="true">Raw OCR</button>
+          <button type="button" class="btn btn-small pane-stage-btn" data-pane="cleaned" draggable="true">Cleaned</button>
+          <button type="button" class="btn btn-small pane-stage-btn" data-pane="translated" draggable="true">Translated</button>
         </div>
         <div class="compare-panes">
           <div class="compare-pane" data-pane="raw">
             <div class="compare-pane-head">
               <span>RAW OCR</span>
+              <button type="button" class="btn btn-close-pane" aria-label="Close this pane" title="Remove from comparison">&times;</button>
               <span class="compare-pane-actions">
                 <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
                 <button class="btn" id="btn-save-raw" type="button" disabled>Save correction</button>
@@ -195,9 +218,10 @@
             </div>
             <div class="compare-text"><span class="empty">(not run)</span></div>
           </div>
-          <div class="compare-pane" data-pane="cleaned">
+          <div class="compare-pane" data-pane="cleaned" style="display:none;">
             <div class="compare-pane-head">
               <span>CLEANED</span>
+              <button type="button" class="btn btn-close-pane" aria-label="Close this pane" title="Remove from comparison">&times;</button>
               <span class="compare-pane-actions">
                 <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
                 <button class="btn" id="btn-save-cleaned" type="button" disabled>Save correction</button>
@@ -206,9 +230,10 @@
             </div>
             <div class="compare-text"><span class="empty">(not run)</span></div>
           </div>
-          <div class="compare-pane" data-pane="translated">
+          <div class="compare-pane" data-pane="translated" style="display:none;">
             <div class="compare-pane-head">
               <span>TRANSLATED</span>
+              <button type="button" class="btn btn-close-pane" aria-label="Close this pane" title="Remove from comparison">&times;</button>
               <span class="compare-pane-actions">
                 <button class="btn btn-show-original" type="button" title="Show original text before edits">Original</button>
                 <button class="btn" id="btn-save-translated" type="button" disabled>Save correction</button>
@@ -217,6 +242,17 @@
             </div>
             <div class="compare-text"><span class="empty">(not run)</span></div>
           </div>
+        </div>
+        </div>
+
+        <!-- Region review: shown when item has PAGE regions and "Regions" mode is active -->
+        <div class="region-list-pane" id="preview-region-list" style="display:none;">
+          <div class="region-list-toolbar">
+            <span class="dim" id="region-count-label"></span>
+            <span class="spacer"></span>
+            <button type="button" class="btn btn-small" id="btn-region-refresh" title="Reload regions from server">Refresh</button>
+          </div>
+          <div id="preview-region-cards"></div>
         </div>
       </div>
     </section>
@@ -274,6 +310,7 @@
           </div>
           <div class="thumbnail-strip" id="history-thumbnails"></div>
         </div>
+        <div class="compare-resize-handle" id="history-resize-handle" aria-label="Drag to resize" role="separator" tabindex="-1"></div>
         <div class="compare-bar">
           <h2 class="compare-title">No document selected</h2>
           <span class="compare-conf dim"></span>

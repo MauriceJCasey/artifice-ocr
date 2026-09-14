@@ -24,6 +24,7 @@ class StartRunRequest(BaseModel):
     output_dir: str = "output"
     project: str | None = None
     force: bool = False
+    segmentation_provider: str | None = None
 
 
 class SkipRequest(BaseModel):
@@ -32,6 +33,29 @@ class SkipRequest(BaseModel):
 
 class RawTextRequest(BaseModel):
     text: str
+
+
+class RegionTextRequest(BaseModel):
+    """Retype/edit one region's text at one PAGE stage index.
+
+    ``stage`` is one of ``"raw"`` / ``"cleaned"`` / ``"translated"`` — the keys
+    of ``artifice_ocr.pagexml.STAGE_TEXT_EQUIV_INDEX``. A correction updates
+    only the selected index; every other stage on that region and every other
+    region are left untouched.
+    """
+
+    stage: str
+    text: str
+
+
+class RegionReorderRequest(BaseModel):
+    """An explicit new reading order, as the page's region ids.
+
+    Must be an exact permutation of the document's region ids — the server
+    rejects (400) a list that is missing, adding, or duplicating any id.
+    """
+
+    region_ids: list[str]
 
 
 class FabricatedResultRequest(BaseModel):

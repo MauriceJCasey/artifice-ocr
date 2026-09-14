@@ -57,5 +57,23 @@ This list is generated directly from [`apps/artifice-ocr/pyproject.toml`](apps/a
 
 - `pywebview>=5.0`
 
+**`segmentation-doclayout-yolo` extra:**
+
+- `doclayout-yolo>=0.0.4`
+
+**`segmentation-kraken` extra:**
+
+- `kraken>=6.0.3,<7; python_version < '3.13'`
+
+**`segmentation-diff-residual` extra:**
+
+- `opencv-python-headless>=4.10`
+
+**`segmentation` extra:**
+
+- `artifice-ocr[segmentation-doclayout-yolo]`
+- `artifice-ocr[segmentation-kraken]`
+- `artifice-ocr[segmentation-diff-residual]`
+
 For the complete resolved dependency tree (including transitive dependencies), see `uv.lock` at the repo root, or run `uv tree`.
 <!-- END GENERATED DEPENDENCIES -->

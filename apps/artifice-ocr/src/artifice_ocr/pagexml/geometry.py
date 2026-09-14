@@ -37,3 +37,38 @@ def restore_original_coordinates(
         )
         for x, y in points
     ]
+
+
+def padded_crop_bounds(
+    points: Iterable[tuple[int | float, int | float]],
+    *,
+    padding: float,
+    image_size: tuple[int, int],
+) -> tuple[int, int, int, int]:
+    """Axis-aligned crop bounds for a region's polygon, padded and clamped.
+
+    ``padding`` is a fraction of the polygon's own extent added on each side
+    (``0.02`` = 2%). Returns integer pixel ``(x0, y0, x1, y1)`` where
+    ``x1``/``y1`` are *exclusive* upper bounds (the PIL crop convention),
+    clamped to the inclusive image bounds ``(0, 0, width, height)`` — never
+    negative and never past the far edge.
+
+    Shares the rounding/clamping convention of
+    :func:`restore_original_coordinates` (``round`` then ``min``/``max``) so
+    there is exactly one rounding convention in this module, not two subtly
+    different ones.
+    """
+    if not points:
+        raise ValueError("A region with no points has no crop bounds")
+    xs = [int(p[0]) for p in points]
+    ys = [int(p[1]) for p in points]
+    x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
+    width, height = image_size
+    pad_x = round((x1 - x0) * padding)
+    pad_y = round((y1 - y0) * padding)
+    return (
+        max(0, x0 - pad_x),
+        max(0, y0 - pad_y),
+        min(width, x1 + pad_x),
+        min(height, y1 + pad_y),
+    )

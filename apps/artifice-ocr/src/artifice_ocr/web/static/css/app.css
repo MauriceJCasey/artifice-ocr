@@ -851,19 +851,125 @@ select.select, .output-row select, .run-row select, label select {
    the Preview and History tabs. */
 .compare-card--with-image {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 2fr;
+  /* Three columns: image | handle(8px) | text(1fr).
+     --split-frac is set by SplitResize JS (localStorage); defaults to 1/3.
+     calc() guards against an unset variable treating the whole expr as invalid. */
+  grid-template-columns: minmax(320px, calc(var(--split-frac, 0.333) * 100%)) 8px 1fr;
   grid-template-rows: auto 1fr;
-  grid-template-areas: "image bar" "image panes";
+  grid-template-areas: "image handle bar" "image handle panes";
 }
 .compare-card--with-image .image-pane {
   grid-area: image;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--rule);
+  border-right: none; /* handle now provides the visual border */
   min-width: 0;
 }
 .compare-card--with-image .compare-bar { grid-area: bar; }
-.compare-card--with-image .compare-panes { grid-area: panes; }
+.compare-card--with-image .compare-resize-handle { grid-area: handle; }
+/* .compare-panes-wrap (the pane-stage-tabs row plus .compare-panes stacked
+   below it) occupies "panes", the same cell .region-list-pane alternates
+   into — .compare-panes itself is no longer a direct grid child, so it no
+   longer needs its own grid-area. */
+.compare-card--with-image .compare-panes-wrap {
+  grid-area: panes;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.compare-panes-wrap .compare-panes {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* ----------------------------------------------------------------- resize handle */
+
+.compare-resize-handle {
+  grid-area: handle;
+  width: 8px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background-color var(--duration-fast) ease;
+  z-index: 10;
+  flex-shrink: 0;
+}
+.compare-resize-handle::before {
+  content: '';
+  display: block;
+  width: 1px;
+  height: 100%;
+  background: transparent;
+  transition: background-color var(--duration-fast) ease;
+}
+.compare-resize-handle:hover::before,
+.compare-resize-handle:active::before {
+  background: var(--accent);
+}
+.compare-resize-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-wash);
+}
+.compare-resize-handle:focus-visible::before {
+  background: var(--accent);
+}
+
+/* Drag-over drop indicator: shown on .compare-panes during drag-to-compare */
+.compare-panes.drag-over {
+  background: var(--accent-wash);
+}
+
+/* ----------------------------------------------------------------- multi-pane */
+
+/* When more than one stage pane is visible, .compare-panes gets this class.
+   Every pane's actual display (flex/none) is set inline by JS per pane
+   (setPaneTab in preview.js) — this rule must NOT force display on
+   .compare-pane itself with !important, or it overrides the inline
+   display:none JS sets for panes that are NOT part of the comparison,
+   showing every pane regardless of which ones the user actually chose. */
+.compare-panes--multi {
+  display: grid !important;
+  /* grid-template-columns is set inline by JS via data-visible-count */
+}
+.compare-panes--multi .compare-pane {
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ----------------------------------------------------------------- pane close button */
+
+/* The &times; close button injected into each .compare-pane-head.
+   Hidden in default single-pane state (shown only when a second pane is open).
+   Uses the label font so it sits cleanly beside the uppercase stage label. */
+.btn-close-pane {
+  display: none;
+  font-size: 0.85rem;
+  line-height: 1;
+  padding: 0.05rem 0.3rem;
+  min-height: unset;
+  color: var(--ink-faint);
+  border-color: var(--rule);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: center;
+  margin-left: auto;
+  /* Prevent the btn base's min-width from inflating the tiny button */
+  min-width: unset;
+}
+.btn-close-pane:hover {
+  color: var(--ink);
+  border-color: var(--rule-dark);
+  background: var(--paper-recessed);
+}
+.btn-close-pane:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.compare-panes--multi .btn-close-pane {
+  display: inline-block;
+}
 
 .image-toolbar {
   display: flex;
@@ -1269,11 +1375,13 @@ tr.history-state-cancelled td { color: var(--ink-faint); }
   text-transform: none;
 }
 
-/* "Stages:" / "Output:" are the same short field-group label pattern,
-   just marked up as <strong> beside their controls rather than a <label>
-   wrapping them (see .run-row / .output-row in index.html). */
+/* "Stages:" / "Output:" / "Segmentation:" are the same short field-group
+   label pattern, just marked up as <strong> beside their controls rather
+   than a <label> wrapping them (see .run-row / .output-row /
+   .segmentation-row in index.html). */
 .run-row > strong,
-.output-row > strong {
+.output-row > strong,
+.segmentation-row > strong {
   font-family: var(--font-label);
   font-weight: 600;
   letter-spacing: var(--label-tracking);
@@ -2290,6 +2398,8 @@ table.queue tbody tr.dragging { opacity: 0.4; }
     min-height: 30vh;
   }
   .image-viewport { min-height: 26vh; }
+  /* No resize handle in single-column layout — there's no split to resize. */
+  .compare-resize-handle { display: none; }
 
   .settings-grid { grid-template-columns: 1fr; }
   .settings-workbench { grid-template-columns: 1fr; }
@@ -2455,4 +2565,308 @@ table.queue tbody tr.dragging { opacity: 0.4; }
   .card:hover {
     transform: none !important;
   }
+}
+
+/* -------------------------------------------------------- segmentation toggle */
+
+.segmentation-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 0.25rem var(--space-6) 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* -------------------------------------------------------- review mode tabs */
+
+.review-mode-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.review-mode-btn {
+  /* Inherits .btn.btn-small — dense variant, compact padding */
+}
+
+/* -------------------------------------------------------- region list pane */
+
+.region-list-pane {
+  grid-area: panes;
+  overflow: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.region-list-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-recessed);
+  flex-shrink: 0;
+}
+
+#preview-region-cards {
+  overflow: auto;
+  flex: 1;
+  padding: 0.75rem 0.9rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* -------------------------------------------------- whole-page pane stage tabs */
+
+.pane-stage-tabs {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.45rem 0.9rem 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper-recessed);
+  flex-shrink: 0;
+}
+
+.pane-stage-btn {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.55rem;
+  min-height: unset;
+}
+
+.pane-stage-btn.active {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+/* A tab that is open in multi-pane comparison but is not the primary
+   (clicked / keyboard-focused) one — gives a visual cue that the pane
+   is already showing beside another. */
+.pane-stage-btn.pane-stage-btn--visible {
+  border-color: var(--rule-dark);
+  color: var(--ink);
+}
+.pane-stage-btn.pane-stage-btn--visible.active {
+  /* Override .active background so the "in-comparison" ring takes precedence
+     over the primary-active green wash — both states can coexist. */
+  background: var(--paper-raised);
+  border-color: var(--rule-dark);
+  color: var(--ink);
+}
+
+/* Drag state on a tab button while the user is dragging it to compare. */
+.pane-stage-btn.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* -------------------------------------------------------- region card */
+
+.region-card {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-paper);
+  overflow: hidden;
+  transition: box-shadow var(--duration-normal) ease,
+              border-color var(--duration-normal) ease;
+}
+
+.region-card:hover {
+  box-shadow: var(--shadow-lifted);
+  border-color: var(--rule-dark);
+}
+
+.region-card--error {
+  border-left: 3px solid var(--error);
+}
+
+.region-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--paper-recessed);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-xs);
+}
+
+.region-card-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--radius-full);
+  font-family: var(--font-label);
+  font-weight: 700;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.region-card-type {
+  font-family: var(--font-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+}
+
+.region-card-conf {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  margin-left: 0.3rem;
+}
+
+.region-error-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.5rem;
+  background: color-mix(in srgb, var(--error) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 35%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--error);
+  font-size: 0.68rem;
+  font-family: var(--font-label);
+  font-weight: 600;
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.region-card-header .region-delete {
+  /* Danger-coloured delete — overridden from default .btn.danger which
+     also applies to buttons in .toolbar. Specificity needed here. */
+  color: var(--error);
+}
+.region-card-header .region-delete:hover:not(:disabled) {
+  background: var(--error);
+  color: var(--paper);
+  border-color: var(--error);
+}
+
+/* -------------------------------------------------------- region card body */
+
+.region-card-body {
+  display: grid;
+  grid-template-columns: minmax(120px, 220px) 1fr;
+  gap: 0;
+  min-height: 100px;
+}
+
+.region-crop-wrap {
+  border-right: 1px solid var(--rule);
+  background: var(--paper-recessed);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0.6rem;
+  overflow: hidden;
+}
+
+.region-crop-canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-sm);
+  /* The crop canvas is clipped to the polygon shape in JS via canvas 2D clip.
+     A subtle border helps delineate the crop against a same-colour background. */
+  outline: 1px solid var(--rule);
+}
+
+.region-text-col {
+  display: flex;
+  flex-direction: column;
+  padding: 0.6rem 0.75rem 0.75rem;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.region-stage-tabs {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.region-stage-btn {
+  font-size: 0.68rem;
+  padding: 0.2rem 0.55rem;
+  min-height: unset;
+  /* §8.3 row-alignment: small buttons are exempt */
+}
+
+.region-stage-btn.active {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+  color: var(--accent-deep);
+}
+
+.region-textarea {
+  width: 100%;
+  min-height: 5rem;
+  resize: vertical;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper-recessed);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  padding: 0.4rem 0.6rem;
+  box-sizing: border-box;
+}
+
+.region-textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.region-textarea[readonly] {
+  color: var(--ink-faint);
+  cursor: not-allowed;
+}
+
+.region-diff-label {
+  font-family: var(--font-label);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
+.region-diff-view {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  max-height: 8rem;
+  overflow: auto;
+  padding: 0.3rem 0.5rem;
+  background: var(--paper-recessed);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  white-space: pre-wrap;
+}
+
+.region-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.region-save {
+  font-size: 0.68rem;
+  padding: 0.25rem 0.6rem;
+  min-height: unset;
 }

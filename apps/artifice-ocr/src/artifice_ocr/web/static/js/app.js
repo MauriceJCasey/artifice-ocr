@@ -25,6 +25,7 @@ const els = {};
  "btn-clear", "btn-skip", "btn-retry", "btn-browse-output",
  "btn-run", "btn-pause", "btn-stop", "progress-bar", "progress-value",
  "status-text", "stage-text", "stage-ocr", "stage-cleanup", "stage-title", "stage-translate", "stage-force",
+ "stage-segmentation", "seg-provider",
  "dropzone-idle", "dropzone-uploading", "dropzone-success",
  "dropzone-error", "dropzone-hint", "dropzone-live",
  "dropzone-success-text", "dropzone-error-text",
@@ -647,12 +648,18 @@ els["btn-run"].onclick = async () => {
   if (!items.size) { log("Add at least one document first.", "warning"); return; }
   if (!stages.includes("ocr")) { log("OCR is required for every new run.", "warning"); return; }
 
+  const body = {
+    stages, output_dir: els["output-dir"].value || "output",
+    project: (els["output-dir"].value || "output") === "output" ? "OCR project" : null,
+    force: els["stage-force"].checked,
+  };
+  // Only include segmentation_provider when the toggle is on and a provider is selected.
+  if (els["stage-segmentation"] && els["stage-segmentation"].checked) {
+    const provider = els["seg-provider"] ? els["seg-provider"].value : "";
+    if (provider) body.segmentation_provider = provider;
+  }
   try {
-    const result = await api("POST", "/api/run/start", {
-      stages, output_dir: els["output-dir"].value || "output",
-      project: (els["output-dir"].value || "output") === "output" ? "OCR project" : null,
-      force: els["stage-force"].checked,
-    });
+    const result = await api("POST", "/api/run/start", body);
     if (result.output_dir) els["output-dir"].value = result.output_dir;
     setRunning(true);
     setWorkflowStep(2);
@@ -979,6 +986,9 @@ function highlightRanges(text, ranges) {
   return out;
 }
 
+// Expose for use by regions.js (loaded after app.js, before preview.js).
+window.highlightRanges = highlightRanges;
+
 // ------------------------------------------------------------------- output
 
 els["btn-browse-output"].onclick = async () => {
@@ -1034,6 +1044,80 @@ const ThemeToggle = (function () {
 })();
 
 window.ThemeToggle = ThemeToggle;
+
+// ---------------------------------------------------- segmentation toggle
+
+const SegmentationToggle = (function () {
+  const toggle = document.getElementById("stage-segmentation");
+  const controls = document.getElementById("segmentation-controls");
+  const providerWrap = document.getElementById("seg-provider-wrap");
+  const providerSelect = document.getElementById("seg-provider");
+
+  let cachedCapabilities = null;
+
+  async function loadCapabilities() {
+    if (cachedCapabilities) return cachedCapabilities;
+    try {
+      const data = await api("GET", "/api/segmentation/capabilities");
+      cachedCapabilities = data.providers || [];
+    } catch {
+      cachedCapabilities = [{ name: "passthrough", requirements: "Built-in (always available)" }];
+    }
+    return cachedCapabilities;
+  }
+
+  function populateProviders(providers) {
+    if (!providerSelect) return;
+    providerSelect.innerHTML = "";
+    if (!providers || !providers.length) {
+      providerSelect.innerHTML = '<option value="">No providers available</option>';
+      return;
+    }
+    for (const p of providers) {
+      const opt = document.createElement("option");
+      opt.value = p.name;
+      // The brief: never hard-code a provider name — populate from the API only.
+      opt.textContent = p.name + (p.requirements ? ` (${p.requirements})` : "");
+      providerSelect.appendChild(opt);
+    }
+    // Select passthrough by default if it appears.
+    const passthrough = providers.find(p => p.name === "passthrough");
+    if (passthrough) providerSelect.value = "passthrough";
+  }
+
+  async function onToggle() {
+    if (!toggle || !controls) return;
+    const enabled = toggle.checked;
+    // `controls` is the row containing this very checkbox — it must stay
+    // visible regardless of checked state, or unchecking it would hide the
+    // only control that can re-check it. Only the provider sub-controls are
+    // conditional on the checkbox.
+    if (enabled) {
+      // Lazily load capabilities on first open.
+      if (!cachedCapabilities) {
+        const providers = await loadCapabilities();
+        populateProviders(providers);
+      }
+      providerWrap.style.display = "";
+    } else {
+      providerWrap.style.display = "none";
+    }
+  }
+
+  // Also expose the cached capabilities so preview.js can check them
+  // without a second fetch when deciding whether to offer region review.
+  function getCapabilities() { return cachedCapabilities; }
+
+  if (toggle) {
+    toggle.addEventListener("change", onToggle);
+    // If the toggle is pre-checked (e.g. after a settings restore), show controls.
+    if (toggle.checked) onToggle();
+  }
+
+  return { loadCapabilities, getCapabilities };
+})();
+
+window.SegmentationToggle = SegmentationToggle;
 
 // --------------------------------------------------------- palette hint button
 
@@ -1184,6 +1268,105 @@ window.QueueTab = {
 };
 
 // -------------------------------------------------------- batch correct
+
+const SplitResize = (function () {
+  const STORAGE_KEY = "ocr_split_frac";
+  const HANDLES = ["preview-resize-handle", "history-resize-handle"];
+
+  // Reasonable bounds: image column must stay between 20% and 70% of the card.
+  var MIN_FRAC = 0.20;
+  var MAX_FRAC = 0.70;
+  var DEFAULT_FRAC = 0.333;
+
+  function loadState() {
+    try {
+      var v = parseFloat(localStorage.getItem(STORAGE_KEY));
+      if (!isNaN(v) && v >= MIN_FRAC && v <= MAX_FRAC) return v;
+    } catch (_) {}
+    return DEFAULT_FRAC;
+  }
+
+  function saveState(frac) {
+    try { localStorage.setItem(STORAGE_KEY, String(frac)); } catch (_) {}
+  }
+
+  function apply(frac) {
+    // Push the value as a CSS custom property onto every compare-card instance.
+    document.querySelectorAll(".compare-card--with-image").forEach(function (card) {
+      card.style.setProperty("--split-frac", String(frac));
+    });
+  }
+
+  // ── Drag interaction ──────────────────────────────────────────────────────
+
+  function initHandle(handleId) {
+    var handle = document.getElementById(handleId);
+    if (!handle) return;
+    var dragging = false;
+    var startX = 0;
+    var startFrac = DEFAULT_FRAC;
+
+    handle.addEventListener("mousedown", function (e) {
+      if (e.button !== 0) return; // left button only
+      dragging = true;
+      startX = e.clientX;
+      startFrac = loadState();
+      e.preventDefault();
+      document.body.style.cursor = "col-resize";
+      handle.setAttribute("aria-label", "Dragging — release to set position");
+    });
+
+    document.addEventListener("mousemove", function (e) {
+      if (!dragging) return;
+      var cards = document.querySelectorAll(".compare-card--with-image");
+      if (!cards.length) return;
+      // Use the first card's width as reference (both cards are independent
+      // but share the same CSS variable, so either works).
+      var cardWidth = cards[0].offsetWidth;
+      if (!cardWidth) return;
+      // Total columns = image(frac) + handle(8px) + text(1fr = remaining)
+      // handle width in px
+      var handleW = 8;
+      // Delta in fraction: (deltaX / cardWidth)
+      var delta = (e.clientX - startX) / cardWidth;
+      var next = Math.min(MAX_FRAC, Math.max(MIN_FRAC, startFrac + delta));
+      apply(next);
+    });
+
+    document.addEventListener("mouseup", function () {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = "";
+      // Read the currently-applied CSS variable value back from the card.
+      var card = document.querySelector(".compare-card--with-image");
+      if (card) {
+        var v = parseFloat(card.style.getPropertyValue("--split-frac"));
+        if (!isNaN(v)) saveState(v);
+      }
+      handle.setAttribute("aria-label", "Drag to resize");
+    });
+
+    // Keyboard accessibility: left/right arrow keys move the split in 1% steps.
+    handle.addEventListener("keydown", function (e) {
+      var step = e.shiftKey ? 0.05 : 0.01;
+      var card = handle.closest(".compare-card--with-image") || document.querySelector(".compare-card--with-image");
+      var cur = parseFloat((card && card.style.getPropertyValue("--split-frac")) || String(DEFAULT_FRAC)) || DEFAULT_FRAC;
+      var next;
+      if (e.key === "ArrowLeft") { next = Math.max(MIN_FRAC, cur - step); e.preventDefault(); }
+      else if (e.key === "ArrowRight") { next = Math.min(MAX_FRAC, cur + step); e.preventDefault(); }
+      else return;
+      apply(next);
+      saveState(next);
+    });
+  }
+
+  HANDLES.forEach(initHandle);
+  apply(loadState());
+
+  return { apply: apply };
+})();
+
+window.SplitResize = SplitResize;
 
 const BatchCorrect = (function () {
   const modal = document.getElementById("modal-batch-correct");
