@@ -1,0 +1,59 @@
+name: dependency-guard
+
+# Two checks, both deterministic and both fail the build on violation:
+#
+# 1. uv.lock must exactly match pyproject.toml. Every dependency change —
+#    including a brand new one — therefore shows up as a reviewable diff to
+#    a committed file, not a silent runtime resolution.
+# 2. No foreign-ecosystem manifest file may exist anywhere in the repo. This
+#    is a pure-Python project; a package.json/Gemfile/go.mod etc. has no
+#    legitimate reason to exist here. This check exists because exactly such
+#    a file (an npm package.json declaring an unrelated, inappropriate
+#    dependency) was once committed to this project's history by mistake and
+#    went unnoticed for weeks — see the repo's incident notes.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lockfile-matches-pyproject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv lock --check
+
+  no-foreign-manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if any non-Python package manifest exists
+        run: |
+          set -euo pipefail
+          PATTERNS='package.json package-lock.json yarn.lock pnpm-lock.yaml npm-shrinkwrap.json Gemfile Gemfile.lock go.mod go.sum Cargo.toml Cargo.lock composer.json composer.lock'
+          found=0
+          for pattern in $PATTERNS; do
+            matches=$(find . -name "$pattern" -not -path "./.git/*")
+            if [ -n "$matches" ]; then
+              echo "::error::Found a foreign-ecosystem manifest file: $pattern"
+              echo "$matches"
+              found=1
+            fi
+          done
+          if [ "$found" -eq 1 ]; then
+            echo "This is a pure-Python project. A package manifest from another"
+            echo "ecosystem should never be committed here — remove it."
+            exit 1
+          fi
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

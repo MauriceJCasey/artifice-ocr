@@ -1,0 +1,17 @@
+PRImA PAGE XML Schema — provenance note
+
+pagecontent.xsd (the 2019-07-15 PAGE namespace schema) is retrieved from
+PRImA Research (https://www.primaresearch.org/) for local, offline
+validation of PAGE XML documents produced by this application.
+
+No explicit license text is published alongside this schema by PRImA
+Research at its source URL. It is vendored here, unmodified, solely to
+validate documents structurally against the published PAGE format — not
+redistributed, sublicensed, or presented as this project's own work.
+
+Source: https://www.primaresearch.org/schema/PAGE/gts/pagecontent/2019-07-15/pagecontent.xsd
+Retrieved: 2026-09-14
+Source SHA-256: 5d7da5af5f5e06d3b9cd1e78b407ffca1862f78ad9823ed89c302fb6409932d5
+
+If PRImA Research publishes explicit licensing terms, or objects to this
+schema's inclusion, please open an issue and it will be addressed promptly.

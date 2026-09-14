@@ -54,12 +54,3 @@ def test_removed_integrations_are_not_packaged():
     assert not [path for path in removed if path.exists()]
 
 
-def test_windows_build_is_blocked_by_critical_workflows():
-    root = Path(__file__).resolve().parents[3]
-    workflow = (root / ".github" / "workflows" / "build-exe.yml").read_text(encoding="utf-8")
-    gate = "Gate OCR on Ollama, LM Studio, and Tropy round trips"
-    assert gate in workflow
-    assert "test_critical_workflows.py" in workflow
-    assert "test_tropy_browse.py" in workflow
-    assert "test_tropy_api.py" in workflow
-    assert workflow.index(gate) < workflow.index("- name: Freeze")

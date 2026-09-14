@@ -44,6 +44,9 @@ artifice-shared-ui = { workspace = true }
 
 [dependency-groups]
 dev = [
+    "fonttools[woff]>=4.63.0",
+    "hypothesis>=6.138.0",
+    "playwright>=1.55.0",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-httpx>=0.36.2",
@@ -66,4 +69,4 @@ markers = [
     "live_interop: opt-in test requiring a real third-party desktop application",
     "ui_stress: deterministic browser and state-machine stress tests",
 ]
-addopts = "-m 'not live_smoke and not live_interop and not ui_stress'"
+addopts = "--import-mode=importlib -m 'not live_smoke and not live_interop and not ui_stress'"

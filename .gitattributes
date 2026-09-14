@@ -1,0 +1,126 @@
+# =============================================================================
+# Artifice Suite — line-ending policy
+# =============================================================================
+# This file is the source of truth for how git stores and checks out line
+# endings. Once it is committed, the per-machine core.autocrlf setting becomes
+# largely redundant: git normalises according to these rules on every
+# platform, so Windows-native, WSL2 and macOS checkouts all agree and
+# `git status` can no longer disagree between shells the way it did under
+# conflicting core.autocrlf values. See CONTRIBUTING.md > "Line endings".
+#
+# Default: auto-detect text and normalise to LF in the repository AND on
+# checkout. Forcing eol=lf everywhere (rather than "native") makes a file's
+# working-tree bytes identical on Windows, WSL2 and macOS, so a checkout
+# looks the same to every shell.
+# =============================================================================
+* text=auto eol=lf
+
+# -----------------------------------------------------------------------------
+# Source / config text — LF in the repo and the working tree.
+# -----------------------------------------------------------------------------
+*.py   text eol=lf
+*.pyw  text eol=lf
+*.css  text eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.html text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.bib  text eol=lf
+*.cff  text eol=lf
+*.cfg  text eol=lf
+*.ini  text eol=lf
+
+# Shell scripts. MUST be LF: a CRLF shebang produces
+# "bad interpreter: /bin/bash^M" under WSL2 / macOS / Linux. Includes defensive
+# rules for shells not yet present so future additions inherit the policy.
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.zsh   text eol=lf
+*.fish  text eol=lf
+
+# PowerShell. Handles LF cleanly on Windows PowerShell 5.1+ and PowerShell 7,
+# so keep it consistent with the rest of the repo.
+*.ps1   text eol=lf
+
+# Windows batch files. Intentional CRLF exception: cmd.exe historically
+# expects CRLF and some constructs (labels / goto) misbehave on LF-only .bat /
+# .cmd files. They are only ever executed on Windows, so checking them out as
+# CRLF everywhere is harmless and correct.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# Extensionless text files (root and per-app).
+Dockerfile      text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+.python-version text eol=lf
+
+# Lockfiles — text, normalised to LF. (pnpm-lock.yaml / package-lock.json, if
+# ever added, are already covered by the *.yaml / *.json rules above.)
+uv.lock text eol=lf
+*.lock  text eol=lf
+
+# -----------------------------------------------------------------------------
+# Binary — never normalised, never diffed. Bytes are bytes.
+# -----------------------------------------------------------------------------
+# Images (present: .png, .ico)
+*.png  binary
+*.ico  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.tiff binary
+*.bmp  binary
+
+# Fonts (present: .ttf under apps/artifice-ocr/assets/fonts/)
+*.ttf   binary
+*.otf   binary
+*.woff  binary
+*.woff2 binary
+*.eot   binary
+
+# Documents / archives
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.tar   binary
+
+# Windows shortcuts — binary, machine-local artifacts.
+*.lnk   binary
+
+# -----------------------------------------------------------------------------
+# Defensive rules for fixture types NOT currently committed but used by
+# artifice-transcribe (audio) and artifice-ocr / model-harness (model weights).
+# Declaring them now means a future fixture commit is protected from accidental
+# EOL mangling on day one, rather than discovered after corruption.
+# -----------------------------------------------------------------------------
+# Audio fixtures (artifice-transcribe)
+*.wav  binary
+*.mp3  binary
+*.flac binary
+*.ogg  binary
+*.m4a  binary
+*.aac  binary
+*.aiff binary
+
+# Model weight / serialised tensor formats
+*.onnx        binary
+*.gguf        binary
+*.pt          binary
+*.pth         binary
+*.ckpt        binary
+*.safetensors binary
+*.h5          binary
+*.pkl         binary
+*.bin         binary
+
+# SQLite / DB snapshots
+*.db      binary
+*.sqlite  binary
+*.sqlite3 binary

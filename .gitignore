@@ -26,3 +26,4 @@ apps/*/uploads/
 # Editors / OS
 .DS_Store
 Thumbs.db
+/output/

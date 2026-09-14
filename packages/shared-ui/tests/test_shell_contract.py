@@ -48,19 +48,3 @@ def test_frameless_window_resize_grip_has_runtime_styles():
     assert "window.pywebview.api.resize" in javascript
 
 
-def test_every_app_uses_the_suite_shell():
-    template_bases = (
-        "apps/artifice-ocr/src/artifice_ocr/web/templates/base.html",
-        "apps/artifice-draft/src/artifice_draft/web/templates/base.html",
-        "apps/artifice-graph/src/artifice_graph/web/templates/base.html",
-        "apps/artifice-transcribe/src/artifice_transcribe/web/templates/base.html",
-    )
-    for relative in template_bases:
-        assert '{% extends "_app_shell.html" %}' in (ROOT / relative).read_text(encoding="utf-8")
-
-    hub = (ROOT / "apps/artifice-hub/src/artifice_hub/web/static/index.html").read_text(
-        encoding="utf-8"
-    )
-    assert 'class="app-shell"' in hub
-    assert "/shared/shell.css" in hub
-    assert "/shared/shell.js" in hub

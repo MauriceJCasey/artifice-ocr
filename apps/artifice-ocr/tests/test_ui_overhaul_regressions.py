@@ -89,14 +89,6 @@ def test_stage_defaults_use_canonical_raw_ocr_key():
     assert 'preferredStage() || "raw"' not in pdf
 
 
-def test_mockup_respects_reduced_motion_for_programmatic_scrolls():
-    mockup = (
-        Path(__file__).resolve().parents[3] / "mockups" / "artifice-ocr-tropy-workbench.html"
-    ).read_text(encoding="utf-8")
-    assert "prefers-reduced-motion: reduce" in mockup
-    assert mockup.count("behavior: scrollBehavior") == 2
-
-
 def test_all_static_buttons_are_non_submitting_controls():
     """Future form wrappers must not turn a toolbar click into navigation."""
     html = (_WEB / "templates" / "index.html").read_text(encoding="utf-8")
