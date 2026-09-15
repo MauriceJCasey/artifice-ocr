@@ -23,10 +23,12 @@ const pdfEls = {};
 });
 
 let pdfEventSource = null;
+let pdfReturnFocus = null;
 
 // ------------------------------------------------------------- open / close
 
 function openPdfExport() {
+  pdfReturnFocus = document.activeElement;
   pdfEls["modal-compile-pdf"].classList.remove("hidden");
   pdfEls["pdf-log"].innerHTML = "";
   pdfEls["btn-pdf-download"].disabled = true;
@@ -46,11 +48,13 @@ function openPdfExport() {
   pdfEls["pdf-stage"].value = window.QueueTab?.preferredStage() || "raw_ocr";
   pdfEls["pdf-output"].value = "";
   refreshPdfPreview();
+  focusFirstIn(pdfEls["modal-compile-pdf"]);
 }
 
 function closePdfExport() {
   if (pdfEventSource) { pdfEventSource.close(); pdfEventSource = null; }
   pdfEls["modal-compile-pdf"].classList.add("hidden");
+  pdfReturnFocus?.focus?.();
 }
 
 function setPdfStatus(text, cls) {
@@ -187,6 +191,7 @@ async function downloadPdf() {
 // ------------------------------------------------------------- event wiring
 
 pdfEls["btn-compile-pdf"].onclick = openPdfExport;
+registerModalCloser("modal-compile-pdf", closePdfExport);
 pdfEls["btn-pdf-close"].onclick = closePdfExport;
 pdfEls["modal-compile-pdf"].querySelector("[data-modal-close]")?.addEventListener("click", closePdfExport);
 pdfEls["btn-pdf-start"].onclick = startPdfExport;

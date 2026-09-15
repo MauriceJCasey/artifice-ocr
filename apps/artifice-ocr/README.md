@@ -103,7 +103,7 @@ artifice-suite/
 │       │   ├── tropy_jsonld.py        # JSON-LD file bridge (import + export)
 │       │   ├── tropy_db.py            # Live read-only .tpy browser (feature-flagged)
 │       │   ├── _tropy_pathcheck.py    # Photo-path safety validation
-│       │   ├── pdf_export.py          # Guided PDF/Markdown compilation
+│       │   ├── pdf_export/            # Guided PDF/Markdown compilation
 │       │   ├── output.py              # Canonical/legacy stage path resolver
 │       │   ├── _guard.py              # Content preservation guards
 │       │   ├── _diff.py               # Diff & marker highlighting

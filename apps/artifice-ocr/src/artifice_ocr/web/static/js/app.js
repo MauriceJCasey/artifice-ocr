@@ -878,8 +878,11 @@ function renderCompare(container, data, { editableStages = new Set() } = {}) {
 function clearCompare(container) {
   container.querySelector(".compare-title").textContent = "No document selected";
   container.querySelector(".compare-conf").textContent = "";
+  // "empty-no-selection" (not renderCompare()'s plain "empty") lets the CSS
+  // tell this apart from a genuinely selected item whose stage just hasn't
+  // run yet, and collapse the pane's height instead of leaving a 46vh gap.
   container.querySelectorAll(".compare-text").forEach(el => {
-    el.innerHTML = `<span class="empty">(not run)</span>`;
+    el.innerHTML = `<span class="empty empty-no-selection">Select a page above to compare its stages.</span>`;
   });
   container.querySelectorAll(".compare-meta").forEach(el => { el.textContent = ""; });
   container.querySelectorAll(".compare-pane").forEach(el => { delete el.dataset.originalText; });
@@ -1055,6 +1058,18 @@ const SegmentationToggle = (function () {
 
   let cachedCapabilities = null;
 
+  // Beginner-facing copy, keyed by provider name. This is a lookup, not
+  // population logic: it never decides which providers exist (that stays
+  // the API's job via populateProviders() below), and an unrecognized name
+  // falls back to that provider's own `requirements` string so a future
+  // fifth provider degrades gracefully instead of showing nothing.
+  const HELP_COPY = {
+    passthrough: "Whole page as one region. No setup needed, and it's the default.",
+    "doclayout-yolo": "Finds text blocks, titles, and figures on a page automatically. Downloads a model on first use.",
+    kraken: "Detects individual lines and reading order. Best for handwritten or complex historical pages, ideally black-and-white scans.",
+    "diff-residual": "Finds hand-added marks by comparing against a separate clean reference scan. Not a general layout option.",
+  };
+
   async function loadCapabilities() {
     if (cachedCapabilities) return cachedCapabilities;
     try {
@@ -1066,23 +1081,35 @@ const SegmentationToggle = (function () {
     return cachedCapabilities;
   }
 
+  function updateProviderHint() {
+    const helpEl = document.getElementById("seg-provider-help");
+    if (!helpEl || !providerSelect) return;
+    const name = providerSelect.value;
+    if (!name) { helpEl.textContent = ""; return; }
+    if (HELP_COPY[name]) { helpEl.textContent = HELP_COPY[name]; return; }
+    const match = (cachedCapabilities || []).find(p => p.name === name);
+    helpEl.textContent = (match && match.requirements) || "";
+  }
+
   function populateProviders(providers) {
     if (!providerSelect) return;
     providerSelect.innerHTML = "";
     if (!providers || !providers.length) {
       providerSelect.innerHTML = '<option value="">No providers available</option>';
+      updateProviderHint();
       return;
     }
     for (const p of providers) {
       const opt = document.createElement("option");
       opt.value = p.name;
-      // The brief: never hard-code a provider name — populate from the API only.
+      // The brief: never hard-code a provider name, populate from the API only.
       opt.textContent = p.name + (p.requirements ? ` (${p.requirements})` : "");
       providerSelect.appendChild(opt);
     }
     // Select passthrough by default if it appears.
     const passthrough = providers.find(p => p.name === "passthrough");
     if (passthrough) providerSelect.value = "passthrough";
+    updateProviderHint();
   }
 
   async function onToggle() {
@@ -1113,8 +1140,9 @@ const SegmentationToggle = (function () {
     // If the toggle is pre-checked (e.g. after a settings restore), show controls.
     if (toggle.checked) onToggle();
   }
+  if (providerSelect) providerSelect.addEventListener("change", updateProviderHint);
 
-  return { loadCapabilities, getCapabilities };
+  return { loadCapabilities, getCapabilities, updateProviderHint };
 })();
 
 window.SegmentationToggle = SegmentationToggle;
@@ -1127,13 +1155,53 @@ document.getElementById("btn-palette-hint")?.addEventListener("click", () => {
 
 // ---------------------------------------------------- keyboard shortcuts
 
+// Shared by every modal in the app: what Tab should stop on. Used here for
+// the Tab-trap and by each modal's own open() (via focusFirstIn) to move
+// focus in when it opens. One definition so all six modals agree.
+const MODAL_FOCUSABLE = 'button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])';
+
+function focusFirstIn(modalEl) {
+  const target = modalEl.querySelector(MODAL_FOCUSABLE);
+  if (target) requestAnimationFrame(() => target.focus());
+}
+
+// A modal registers its own close() here (keyed by the modal element's id) so
+// the generic Escape handler below can call it instead of just hiding the
+// backdrop directly. close() is where each modal's real cleanup lives: focus
+// restore, in some cases cancelling in-flight requests (Compile PDF's SSE
+// connection). A modal that never registers (the two Tropy modals, which
+// already close themselves correctly via their own capture-phase Escape
+// handler in tropy.js) falls back to a plain hide, which is a harmless no-op
+// if that modal is already closed by the time this handler runs.
+const MODAL_CLOSERS = {};
+function registerModalCloser(modalId, closeFn) {
+  MODAL_CLOSERS[modalId] = closeFn;
+}
+
 document.addEventListener("keydown", (e) => {
   const tag = e.target.tagName;
   const inInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 
-  // Escape closes modals
+  // Escape closes modals — via each modal's own close() when registered, so
+  // its cleanup (focus restore, cancelling in-flight requests) actually runs.
   if (e.key === "Escape") {
-    document.querySelectorAll(".modal-backdrop:not(.hidden)").forEach(m => m.classList.add("hidden"));
+    document.querySelectorAll(".modal-backdrop:not(.hidden)").forEach(m => {
+      (MODAL_CLOSERS[m.id] || (() => m.classList.add("hidden")))();
+    });
+  }
+
+  // Tab cycles within the open modal instead of escaping to the page behind it
+  if (e.key === "Tab") {
+    const openModal = document.querySelector(".modal-backdrop:not(.hidden)");
+    if (openModal) {
+      const focusable = [...openModal.querySelectorAll(MODAL_FOCUSABLE)];
+      if (focusable.length) {
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    }
   }
 
   // Ctrl+Enter / Cmd+Enter runs pipeline
@@ -1379,15 +1447,19 @@ const BatchCorrect = (function () {
   const statusEl = document.getElementById("batch-status");
   const btnApply = document.getElementById("btn-batch-apply");
   const btnClose = document.getElementById("btn-batch-cancel");
+  let returnFocus = null;
 
   function open() {
     if (!modal) return;
+    returnFocus = document.activeElement;
     modal.classList.remove("hidden");
     statusEl.textContent = "";
+    focusFirstIn(modal);
   }
 
   function close() {
     if (modal) modal.classList.add("hidden");
+    returnFocus?.focus?.();
   }
 
   async function apply() {
@@ -1428,8 +1500,46 @@ const BatchCorrect = (function () {
   modal?.addEventListener("click", (e) => { if (e.target === modal) close(); });
 
   document.getElementById("btn-batch-correct")?.addEventListener("click", open);
+  registerModalCloser("modal-batch-correct", close);
 
   return { open, close };
 })();
+
+const SegmentationHelp = (function () {
+  const modal = document.getElementById("modal-segmentation-help");
+  let returnFocus = null;
+
+  async function open() {
+    if (!modal) return;
+    returnFocus = document.activeElement;
+    // Loaded lazily and cached by SegmentationToggle; calling this here
+    // does not re-fetch if the user already opened the provider dropdown,
+    // and it fetches for the first time if they open help before that.
+    const providers = await SegmentationToggle.loadCapabilities();
+    const availableNames = new Set((providers || []).map(p => p.name));
+    modal.querySelectorAll("[data-provider-unavailable]").forEach((el) => {
+      const name = el.getAttribute("data-provider-unavailable");
+      el.hidden = availableNames.has(name);
+    });
+    modal.classList.remove("hidden");
+    focusFirstIn(modal);
+  }
+
+  function close() {
+    if (modal) modal.classList.add("hidden");
+    returnFocus?.focus?.();
+  }
+
+  modal?.querySelector("[data-modal-close]")?.addEventListener("click", close);
+  // Close on backdrop click
+  modal?.addEventListener("click", (e) => { if (e.target === modal) close(); });
+
+  document.getElementById("btn-segmentation-help")?.addEventListener("click", open);
+  registerModalCloser("modal-segmentation-help", close);
+
+  return { open, close };
+})();
+
+window.SegmentationHelp = SegmentationHelp;
 
 window.BatchCorrect = BatchCorrect;

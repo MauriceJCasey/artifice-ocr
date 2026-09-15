@@ -132,6 +132,9 @@
 
         <div class="segmentation-row" id="segmentation-controls">
           <strong style="font-size:var(--text-sm);">Segmentation</strong>
+          <button type="button" id="btn-segmentation-help" aria-label="What do these segmentation options mean?" title="What do these segmentation options mean?" style="background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:0;line-height:1;display:inline-flex;align-items:center;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
           <label class="check"><input type="checkbox" id="stage-segmentation"> Enable region segmentation</label>
           <label id="seg-provider-wrap" style="display:none;">
             Provider
@@ -139,6 +142,7 @@
               <option value="">Loading providers&hellip;</option>
             </select>
           </label>
+          <span id="seg-provider-help" class="settings-field-help" style="flex-basis:100%;" aria-live="polite"></span>
         </div>
 
         <div class="output-row">
@@ -216,7 +220,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty">(not run)</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
           </div>
           <div class="compare-pane" data-pane="cleaned" style="display:none;">
             <div class="compare-pane-head">
@@ -228,7 +232,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty">(not run)</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
           </div>
           <div class="compare-pane" data-pane="translated" style="display:none;">
             <div class="compare-pane-head">
@@ -240,7 +244,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty">(not run)</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
           </div>
         </div>
         </div>
@@ -331,7 +335,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty">(not run)</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
           </div>
           <div class="compare-pane" data-pane="cleaned">
             <div class="compare-pane-head">
@@ -342,7 +346,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty">(not run)</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
           </div>
           <div class="compare-pane" data-pane="translated">
             <div class="compare-pane-head">
@@ -353,7 +357,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty">(not run)</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
           </div>
         </div>
       </div>
@@ -704,6 +708,25 @@
       <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1rem;">
         <button type="button" class="btn" id="btn-batch-cancel">Close</button>
         <button type="button" class="btn accent" id="btn-batch-apply">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modal-segmentation-help">
+    <div class="modal" style="width:min(560px, 92vw);" role="dialog" aria-modal="true" aria-labelledby="segmentation-help-title">
+      <h3 id="segmentation-help-title">Segmentation options</h3>
+      <button type="button" class="modal-close" data-modal-close aria-label="Close segmentation options help">&times;</button>
+
+      <div class="segmentation-help-group">
+        <h4>Detecting page layout</h4>
+        <p><strong>Whole page</strong> (<code>passthrough</code>) treats the entire page as one region. No setup, no download: this is what runs by default.<span data-provider-unavailable="passthrough" hidden> Not installed on this machine.</span></p>
+        <p><strong>Automatic layout detection</strong> (<code>doclayout-yolo</code>) is a pretrained model that finds the regions on a page by itself, such as text blocks, titles, and figures. Good for typeset pages with mixed layout, like multiple columns or embedded images. Downloads a model the first time it runs.<span data-provider-unavailable="doclayout-yolo" hidden> Not installed on this machine.</span></p>
+        <p><strong>Line-level detail</strong> (<code>kraken</code>) additionally detects individual line baselines and reading order, not just regions. It&rsquo;s the tool of choice for handwritten or otherwise complex historical material where precise line boundaries matter. Works best on black-and-white (bitonal) scans; it still runs on color or grayscale images, just less reliably. Needs an extra install.<span data-provider-unavailable="kraken" hidden> Not installed on this machine.</span></p>
+      </div>
+
+      <div class="segmentation-help-group">
+        <h4>Finding hand-added annotations</h4>
+        <p><strong>Diff-residual</strong> (<code>diff-residual</code>) is a different kind of tool: it is not a layout detector. Give it a clean reference scan of the same page with no annotations, and it finds what was added by hand, such as underlines and marginalia, by comparing the two. Pick it only when you have that second reference image; if it can&rsquo;t align the two reliably, it reports an error rather than guessing.<span data-provider-unavailable="diff-residual" hidden> Not installed on this machine.</span></p>
       </div>
     </div>
   </div>

@@ -494,19 +494,17 @@ tropy["modal-tropy-send"].addEventListener("click", (event) => {
   if (event.target === tropy["modal-tropy-send"]) closeSend();
 });
 document.addEventListener("keydown", (event) => {
+  // Tab-trapping for these two modals is now handled generically in app.js's
+  // shared keyboard-shortcuts listener (any open .modal-backdrop, not just
+  // these two). This listener keeps only what stays Tropy-specific: Escape
+  // must call closeSend()/closeBrowser() themselves rather than just hiding
+  // the backdrop, because they cancel in-flight requests, reset the
+  // workflow step, and restore focus.
   const openModal = [tropy["modal-tropy-send"], tropy["modal-tropy-add"]].find((modal) => !modal.classList.contains("hidden"));
   if (!openModal) return;
   if (event.key === "Escape") {
     event.preventDefault();
     openModal === tropy["modal-tropy-send"] ? closeSend() : closeBrowser();
-    return;
   }
-  if (event.key !== "Tab") return;
-  const focusable = [...openModal.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex]:not([tabindex="-1"])')];
-  if (!focusable.length) return;
-  const first = focusable[0];
-  const last = focusable[focusable.length - 1];
-  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-  if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 }, { capture: true });
 window.openTropyExport = openTropyExport;

@@ -68,19 +68,22 @@ segmentation-doclayout-yolo = [
 # Kraken BLLA segmentation (Commit 5 of docs/PRE_PROCESSING_PLAN.md).
 # Imported lazily inside artifice_ocr.segmentation.kraken only.
 #
-# ⚠ KNOWN UNRESOLVED CONFLICT — FLAGGED FOR MAINTAINER (2026-09-14):
-# No published Kraken version coexists with artifice-transcribe's ASR stack
-# in the shared uv workspace lock:
+# RESOLVED (2026-09-15): no published Kraken version coexists with
+# artifice-transcribe's ASR stack in one universal resolution:
 #   - Kraken 6.x pins numpy~=2.0.0, but whisperx>=3.8.0 (asr/asr-cuda) needs
 #     numpy>=2.1.0 — irreconcilable.
 #   - Kraken 7.0.x pins lightning==2.6.1, but nemo-toolkit[asr]
 #     (asr-parakeet) needs lightning<=2.4.0 — irreconcilable.
 #   - Kraken 7.1.x pins torch>=2.9, but asr/asr-cuda pin torch<2.9 —
 #     irreconcilable.
-# So this extra (and, transitively, the `segmentation` umbrella) makes
-# `uv sync`/`uv lock` fail until the maintainer picks a resolution: declare a
-# root-level `[tool.uv] conflicts` between the segmentation and asr extras,
-# relax transcribe's pins, or install the two stacks in separate environments.
+# Fixed by declaring `segmentation-kraken`/`segmentation` and `asr`/`asr-cuda`
+# as conflicting in the root `pyproject.toml`'s `[tool.uv] conflicts` — uv
+# forks its resolution instead of demanding one universal answer, so both
+# sides lock and install cleanly, just never into the same environment.
+# Verified: `uv lock` resolves the whole workspace with kraken==6.0.3 present,
+# and `uv sync --extra web --extra window --extra segmentation-kraken` (run
+# from this directory) resolves a clean, compatible torch/lightning stack
+# with no conflict error.
 #
 # Pin below is the closest available line: Kraken 6.0.3 is the latest 6.x on
 # PyPI (6.0.4 is a Git tag that was never published). Its torch>=2.4,<=2.9 and
@@ -136,8 +139,17 @@ testpaths = ["tests"]
 markers = [
     "live_interop: opt-in test requiring real third-party desktop/model applications",
     "ui_stress: deterministic browser and state-machine stress tests",
+    # Cost/ownership taxonomy (Test Bloat and God Script Refactor.md, Phase 1).
+    # Registered ahead of the test-layer reorganisation in Phase 3 so tests can
+    # start picking these up incrementally; nothing is tagged yet, and the
+    # default addopts filter below is unchanged until that phase lands.
+    "unit: pure functions, no app/DB/threads/avoidable filesystem I/O",
+    "api: HTTP contract and validation tests against an isolated app",
+    "integration: database, filesystem, worker, or cross-layer flow tests",
+    "browser: real user-interface behaviour tests",
+    "live: tests requiring a live model or external application",
 ]
-addopts = "-m 'not live_interop and not ui_stress'"
+addopts = "-m 'not live_interop and not ui_stress' --durations=20"
 
 [dependency-groups]
 dev = [

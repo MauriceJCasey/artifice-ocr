@@ -757,6 +757,19 @@ td.stage-failed { color: var(--error); font-weight: 600; }
 }
 .modal-close:hover { color: var(--ink); background: var(--accent-wash); }
 
+/* ------------------------------------------------- segmentation help panel */
+
+.segmentation-help-group + .segmentation-help-group { margin-top: var(--space-5); }
+.segmentation-help-group h4 {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  margin: 0 0 var(--space-4);
+  color: var(--ink-soft);
+}
+.segmentation-help-group p { margin: 0 0 var(--space-4); }
+.segmentation-help-group p:last-child { margin-bottom: 0; }
+.segmentation-help-group [data-provider-unavailable] { color: var(--ink-faint); font-style: italic; }
+
 /* ------------------------------------------------------------ misc controls */
 
 select.select, .output-row select, .run-row select, label select {
@@ -845,6 +858,19 @@ select.select, .output-row select, .run-row select, label select {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* clearCompare() (app.js) marks its "nothing selected at all" span with
+   this modifier, distinct from renderCompare()'s per-stage "(not run)"
+   (an item IS selected there; a sibling pane in the same grid row may
+   carry real content whose height the row must still accommodate, so
+   that case keeps the full 46vh). Only the true empty state — reachable
+   before any item is ever picked, or after Clear All / Escape — collapses
+   its height, so three simultaneously-empty panes don't read as one large
+   dead rectangle under the RAW OCR / CLEANED / TRANSLATED headers. */
+.compare-text:has(> .empty-no-selection) {
+  height: auto;
+  min-height: 7rem;
 }
 
 /* Source-image pane beside the Raw/Cleaned/Translated panes — shared by

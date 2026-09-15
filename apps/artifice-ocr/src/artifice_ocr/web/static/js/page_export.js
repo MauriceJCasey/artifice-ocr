@@ -23,12 +23,15 @@ const pageExportEls = {};
   pageExportEls[id] = document.getElementById(id);
 });
 
+let pageExportReturnFocus = null;
+
 function setPageExportStatus(text, cls) {
   pageExportEls["page-export-status"].textContent = text;
   pageExportEls["page-export-status"].className = "dim " + (cls || "");
 }
 
 function openPageExport() {
+  pageExportReturnFocus = document.activeElement;
   pageExportEls["modal-export-page"].classList.remove("hidden");
   pageExportEls["page-export-folder"].value = window.QueueTab?.outputDirectory() || "output";
 
@@ -47,10 +50,12 @@ function openPageExport() {
     btn.disabled = false;
     btn.textContent = "Export";
   }
+  focusFirstIn(pageExportEls["modal-export-page"]);
 }
 
 function closePageExport() {
   pageExportEls["modal-export-page"].classList.add("hidden");
+  pageExportReturnFocus?.focus?.();
 }
 
 async function startPageExport() {
@@ -85,6 +90,7 @@ async function startPageExport() {
 // ------------------------------------------------------------- event wiring
 
 pageExportEls["btn-export-page"].onclick = openPageExport;
+registerModalCloser("modal-export-page", closePageExport);
 pageExportEls["btn-page-export-close"].onclick = closePageExport;
 pageExportEls["modal-export-page"].querySelector("[data-modal-close]")?.addEventListener("click", closePageExport);
 pageExportEls["btn-page-export-start"].onclick = startPageExport;
