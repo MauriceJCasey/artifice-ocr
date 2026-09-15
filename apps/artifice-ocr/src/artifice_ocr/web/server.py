@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import shared_ui
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -50,11 +50,12 @@ from .routers import segmentation as segmentation_router
 from .routers import settings as settings_router
 from .routers import tropy_browse as tropy_browse_router
 from .routers import tropy_notes as tropy_notes_router
+from .runtime import PdfExportState, RunState
 
 logger = logging.getLogger(__name__)
 
 
-app = FastAPI(title="ArtificeOCR")
+_core_router = APIRouter()
 
 # CORS origins default to the app's own standard host:port pair, but are
 # overridable via ARTIFICE_OCR_CORS_ORIGINS (comma-separated) for
@@ -71,16 +72,7 @@ _cors_origins = (
     else _DEFAULT_CORS_ORIGINS
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-)
 
-
-@app.middleware("http")
 async def no_cache_static(request: Request, call_next):
     response: Response = await call_next(request)
     if request.url.path.startswith("/static/") or request.url.path.startswith("/shared/"):
@@ -88,18 +80,6 @@ async def no_cache_static(request: Request, call_next):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
     return response
-
-
-app.include_router(byom_router.router)
-app.include_router(queue_router.router)
-app.include_router(run_router.router)
-app.include_router(segmentation_router.router)
-app.include_router(events_router.router)
-app.include_router(settings_router.router)
-app.include_router(history_router.router)
-app.include_router(tropy_browse_router.router)
-app.include_router(tropy_notes_router.router)
-app.include_router(pdf_export_router.router)
 
 # ── Static assets (resolved through importlib.resources — freeze-safe) ─────
 # Resolved through importlib.resources, NOT a __file__-relative path.  This
@@ -110,7 +90,6 @@ STATIC_DIR = importlib.resources.files("artifice_ocr.web") / "static"
 
 # Shared design system (resolved from installed shared-ui package)
 _SHARED_UI = importlib.resources.files(shared_ui) / "assets"
-app.mount("/shared", StaticFiles(directory=str(_SHARED_UI)), name="shared")
 
 # ── Jinja2 — PackageLoader resolves through importlib (freeze-safe), and
 # ChoiceLoader lets templates include shared-ui’s masthead partial.
@@ -169,19 +148,19 @@ def _render(template_name: str, **extra) -> str:
     return _JINJA.get_template(template_name).render(**ctx)
 
 
-@app.get("/", response_class=HTMLResponse)
+@_core_router.get("/", response_class=HTMLResponse)
 def index() -> HTMLResponse:
     return HTMLResponse(_render("index.html", active_tab="pipeline"))
 
 
-@app.get("/about", response_class=HTMLResponse)
+@_core_router.get("/about", response_class=HTMLResponse)
 def about() -> HTMLResponse:
     return HTMLResponse(
         _render("about.html", active_tab="about", show_inspector=False, show_activity=False)
     )
 
 
-@app.post("/api/native/pick-file")
+@_core_router.post("/api/native/pick-file")
 async def pick_file(request: Request) -> dict[str, str | list[str]]:
     """Open a native file picker and return the selected path(s).
 
@@ -229,7 +208,7 @@ async def pick_file(request: Request) -> dict[str, str | list[str]]:
     return result.as_dict()
 
 
-@app.post("/api/native/pick-folder")
+@_core_router.post("/api/native/pick-folder")
 async def pick_folder() -> dict[str, str | list[str]]:
     """Open a native folder picker and return the selected folder path.
 
@@ -240,7 +219,7 @@ async def pick_folder() -> dict[str, str | list[str]]:
     return result.as_dict()
 
 
-@app.post("/api/native/save-file")
+@_core_router.post("/api/native/save-file")
 async def save_file(request: Request) -> dict[str, str | list[str]]:
     """Open a native save-file dialog and return the chosen path.
 
@@ -280,7 +259,7 @@ async def save_file(request: Request) -> dict[str, str | list[str]]:
     return result.as_dict()
 
 
-@app.post("/api/native/reveal")
+@_core_router.post("/api/native/reveal")
 async def reveal_file(request: Request) -> dict:
     """Reveal a file in the OS file manager.
 
@@ -564,7 +543,7 @@ def _byom_preview_fixture(app: str, state: str) -> dict:
     return scenarios.get(state, scenarios["not-found"])
 
 
-@app.get("/byom-preview")
+@_core_router.get("/byom-preview")
 def byom_preview(app: str = "artifice-ocr", state: str = "not-found") -> HTMLResponse:
     """Dev-only preview of the shared BYOM onboarding screen. 404s unless
     ARTIFICE_DEV_PREVIEW=1 is set in the environment.
@@ -615,7 +594,77 @@ def byom_preview(app: str = "artifice-ocr", state: str = "not-found") -> HTMLRes
 # ── Handoff discovery: check if another app is running ──────────────────
 
 
-app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+def create_app(
+    *,
+    runtime_state: RunState | None = None,
+    pdf_export_state: PdfExportState | None = None,
+) -> FastAPI:
+    """Build an ArtificeOCR FastAPI app, wired to injectable state.
+
+    Callers that pass an explicit RunState/PdfExportState (e.g. a test
+    fixture's own fresh instance) get every router module that references
+    that state by name rewired to it — the single place that happens,
+    replacing the five-plus scattered monkeypatches
+    apps/artifice-ocr/tests/test_web.py used to need, and fixing a gap that
+    fixture had: tropy_browse and tropy_notes import `state` too but were
+    never among the patched targets.
+
+    Callers that omit the state arguments (including the module-level
+    ``app = create_app()`` below) reuse whatever ``runtime.state`` /
+    ``runtime.pdf_export_state`` already are, rather than constructing new
+    ones. This matters: some callers bind ``state`` by name at import time
+    (``from .runtime import state``, e.g.
+    apps/artifice-ocr/tests/test_live_ui_model_interop.py) before this
+    module is imported. Building a *new* RunState here unconditionally would
+    silently detach their reference from the object every router actually
+    uses — reproduced by a failing live-interop run before this comment was
+    written. Reusing the existing singleton by default keeps that binding
+    valid, exactly as it was before this factory existed.
+    """
+    from . import runtime
+
+    rs = runtime_state if runtime_state is not None else runtime.state
+    pes = pdf_export_state if pdf_export_state is not None else runtime.pdf_export_state
+
+    runtime.state = rs
+    runtime.pdf_export_state = pes
+    queue_router.state = rs
+    run_router.state = rs
+    events_router.state = rs
+    history_router.state = rs
+    tropy_browse_router.state = rs
+    tropy_notes_router.state = rs
+    pdf_export_router.pdf_export_state = pes
+
+    new_app = FastAPI(title="ArtificeOCR")
+    new_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
+    new_app.middleware("http")(no_cache_static)
+
+    new_app.include_router(byom_router.router)
+    new_app.include_router(queue_router.router)
+    new_app.include_router(run_router.router)
+    new_app.include_router(segmentation_router.router)
+    new_app.include_router(events_router.router)
+    new_app.include_router(settings_router.router)
+    new_app.include_router(history_router.router)
+    new_app.include_router(tropy_browse_router.router)
+    new_app.include_router(tropy_notes_router.router)
+    new_app.include_router(pdf_export_router.router)
+    new_app.include_router(_core_router)
+
+    new_app.mount("/shared", StaticFiles(directory=str(_SHARED_UI)), name="shared")
+    new_app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+    return new_app
+
+
+app = create_app()
 
 
 # --------------------------------------------------------------------------- #

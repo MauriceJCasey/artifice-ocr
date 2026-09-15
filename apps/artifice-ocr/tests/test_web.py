@@ -10,10 +10,11 @@ tests below — each test reads a fixed number of frames and exits, so none can
 hang. The underlying event plumbing (`JobRunner` -> `queue.Queue`) also retains
 its own coverage in `test_gui.py`.
 
-`server.py` binds `state` at import time via `from .runtime import state`, so
-patching `runtime.state` after that import would not reach the endpoints —
-they resolve `state` from `server`'s own module globals. The fixture below
-patches `runtime.state` directly for that reason.
+`server.create_app()` wires a fresh `RunState`/`PdfExportState` into every
+router module that imports them by name, so the `client` fixture below just
+builds a fresh app around its own `RunState` — no per-router monkeypatching
+needed. The `events_server` fixture still patches the router modules directly
+because it reuses the module-level `server.app`.
 """
 
 import json
@@ -64,12 +65,7 @@ def client(tmp_path, monkeypatch):
     config.apply_overrides({"history_db": str(tmp_path / "history.db")})
 
     fresh = RunState()
-    monkeypatch.setattr(_queue_router, "state", fresh)
-    monkeypatch.setattr(_run_router, "state", fresh)
-    monkeypatch.setattr(_events_router, "state", fresh)
-    monkeypatch.setattr(_history_router, "state", fresh)
-    # pdf_export router does NOT import state, only pdf_export_state
-    monkeypatch.setattr("artifice_ocr.web.runtime.state", fresh)
+    monkeypatch.setattr(server, "app", server.create_app(runtime_state=fresh))
 
     # Reset pdf_export_state so no test inherits a prior run's output_path,
     # status or queued events (see test_pdf_export_download_404_before_compilation
