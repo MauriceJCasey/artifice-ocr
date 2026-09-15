@@ -1,0 +1,191 @@
+name: Build standalone executable
+
+# WHY THIS WORKFLOW EXISTS
+#
+# PyInstaller cannot cross-compile. A Windows .exe must be built on Windows, a
+# macOS binary on macOS. This produces the Windows and Linux onedir bundles
+# for ArtificeOCR from apps/artifice-ocr/artifice-ocr.spec.
+#
+# macOS is deliberately ABSENT. A macOS binary cannot be opened by an ordinary
+# user without notarisation — they would have to run
+# `xattr -r -d com.apple.quarantine` by hand. Producing an unsigned .app that
+# most Mac users cannot launch would look like support and would not be.
+# Add macOS here at the same time as signing and notarisation, not before.
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - 'v*'
+
+# The build job only checks out, builds, and uploads a workflow artifact
+# (upload-artifact needs no elevated token scope) — read-only is sufficient.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false     # a Windows failure should not hide a Linux success
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install the app and PyInstaller
+        run: uv sync --extra web
+
+      - name: Gate on the core round-trip workflows
+        # A failing core workflow must produce no distributable bundle.
+        run: uv run pytest -q apps/artifice-ocr/tests/test_critical_workflows.py apps/artifice-ocr/tests/test_tropy_browse.py apps/artifice-ocr/tests/test_tropy_api.py apps/artifice-ocr/tests/test_tropy_route_surface.py
+
+      - name: Freeze
+        # Run from the repo root — the spec resolves paths relative to it, and
+        # collect_data_files() needs the workspace packages importable.
+        run: uv run --with pyinstaller pyinstaller --clean --noconfirm apps/artifice-ocr/artifice-ocr.spec
+
+      - name: Smoke-test the built binary (Linux)
+        if: runner.os == 'Linux'
+        # Tests cannot see packaging bugs: they run against src/, while the bug
+        # lives only in the artifact. So exercise the ARTIFACT over HTTP, and
+        # assert on an asset that resolves via importlib.resources from the
+        # shared package.
+        run: |
+          BINARY="./dist/artifice-ocr/artifice-ocr"
+          setsid nohup "$BINARY" --port 18999 --no-window > /tmp/exe.log 2>&1 < /dev/null &
+          sleep 12
+          fail=0
+          for path in / /api/queue /shared/tokens.css /static/css/app.css; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:18999$path")
+            echo "  $path -> $code"
+            [ "$code" = "200" ] || fail=1
+          done
+          curl -s http://127.0.0.1:18999/ | grep -q app-shell \
+            && echo "  shared app shell rendered: yes" \
+            || { echo "  shared app shell MISSING"; fail=1; }
+          curl -s http://127.0.0.1:18999/ | grep -q "Tropy round trip" \
+            && echo "  Tropy-first workspace rendered: yes" \
+            || { echo "  Tropy-first workspace MISSING"; fail=1; }
+          pkill -f "dist/artifice-ocr" || true
+          echo "--- server log ---"; head -20 /tmp/exe.log
+          exit $fail
+
+      - name: Smoke-test the built binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        # Never merge native stderr with 2>&1 in PowerShell — it corrupts
+        # error handling and $LASTEXITCODE. Start-Process, not `&`, so the
+        # server does not hold this step open.
+        run: |
+          $exe = ".\dist\artifice-ocr\artifice-ocr.exe"
+          if (-not (Test-Path $exe)) { Write-Error "no binary at $exe"; exit 1 }
+          Write-Host "binary size: $((Get-Item $exe).Length) bytes"
+          $stdoutLog = "artifice-ocr-stdout.log"
+          $stderrLog = "artifice-ocr-stderr.log"
+          $p = Start-Process -FilePath $exe -ArgumentList @("--no-window","--port","18999") -PassThru `
+            -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog
+          Start-Sleep -Seconds 20
+          Write-Host "process HasExited: $($p.HasExited)"
+          if ($p.HasExited) { Write-Host "process ExitCode: $($p.ExitCode)" }
+          $fail = 0
+          foreach ($path in @("/","/api/queue","/shared/tokens.css","/static/css/app.css")) {
+            try {
+              $r = Invoke-WebRequest -Uri "http://127.0.0.1:18999$path" -UseBasicParsing -TimeoutSec 15
+              Write-Host "  $path -> $($r.StatusCode)"
+              if ($r.StatusCode -ne 200) { $fail = 1 }
+            } catch {
+              Write-Host "  $path -> FAILED"
+              $fail = 1
+            }
+          }
+          try {
+            $body = (Invoke-WebRequest -Uri "http://127.0.0.1:18999/" -UseBasicParsing -TimeoutSec 15).Content
+            if ($body -match "app-shell") { Write-Host "  shared app shell rendered: yes" }
+            else { Write-Host "  shared app shell MISSING"; $fail = 1 }
+            if ($body -match "Tropy round trip") { Write-Host "  Tropy-first workspace rendered: yes" }
+            else { Write-Host "  Tropy-first workspace MISSING"; $fail = 1 }
+          } catch { Write-Host "  index fetch FAILED"; $fail = 1 }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if ($fail -ne 0) {
+            Write-Host "--- stdout ---"; Get-Content $stdoutLog -ErrorAction SilentlyContinue
+            Write-Host "--- stderr ---"; Get-Content $stderrLog -ErrorAction SilentlyContinue
+          }
+          exit $fail
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifice-ocr-${{ runner.os }}
+          path: |
+            dist/artifice-ocr/
+          if-no-files-found: error
+          retention-days: 30
+
+  # Attach the frozen bundles to the GitHub Release, on tags only.
+  #
+  # This is a separate job rather than extra steps on `build` for a reason:
+  # the build job runs a PyInstaller freeze of third-party code and is
+  # deliberately held to `contents: read` — it must not carry a write-capable
+  # token while executing arbitrary build tooling. Only this job, which does
+  # nothing but archive already-built artifacts and upload them, holds
+  # `contents: write`, and only at the job level.
+  attach-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read   # download-artifact needs this once job-level perms zero the defaults
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Archive each bundle into a single release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER="${{ github.ref_name }}"
+          cd "$GITHUB_WORKSPACE"
+
+          for os in Linux Windows; do
+            (
+              cd "dist/artifice-ocr-$os"
+              if [ "$os" = "Linux" ]; then
+                tar -czf "$GITHUB_WORKSPACE/artifice-ocr-Linux-$VER.tar.gz" .
+              else
+                zip -qr "$GITHUB_WORKSPACE/artifice-ocr-Windows-$VER.zip" .
+              fi
+            )
+          done
+
+          ls -l "$GITHUB_WORKSPACE"
+
+      - name: Upload assets to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VER="${{ github.ref_name }}"
+
+          # The Release may be created by a separate release workflow on the
+          # same tag with no ordering guarantee, or may not exist at all for
+          # this repo yet — create it if missing, then upload onto it.
+          if ! gh release view "$VER" >/dev/null 2>&1; then
+            gh release create "$VER" --title "$VER" --generate-notes
+          fi
+
+          gh release upload "$VER" \
+            "artifice-ocr-Linux-$VER.tar.gz" \
+            "artifice-ocr-Windows-$VER.zip" \
+            --clobber
