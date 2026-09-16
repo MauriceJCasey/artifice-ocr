@@ -1,5 +1,8 @@
 # Artifice OCR
 
+[![safety-tests](https://github.com/MauriceJCasey/artifice-ocr/actions/workflows/safety-tests.yml/badge.svg)](https://github.com/MauriceJCasey/artifice-ocr/actions/workflows/safety-tests.yml)
+[![REUSE status](https://api.reuse.software/badge/github.com/MauriceJCasey/artifice-ocr)](https://api.reuse.software/info/github.com/MauriceJCasey/artifice-ocr)
+
 A local-first, bring-your-own-model (BYOM) pipeline for historical document OCR, cleanup, and
 translation. Runs against a local LLM server (Ollama, LM Studio, or any OpenAI-compatible
 endpoint) — no document ever leaves your machine unless you point it at a remote API yourself.
