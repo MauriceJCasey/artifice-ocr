@@ -1277,12 +1277,24 @@ class TestRecentProjects:
         assert recent_projects() == [existing]
 
     def test_path_home_raising_returns_empty(self, monkeypatch):
-        """Path.home() raising (HOME/USERPROFILE unset) must not propagate."""
+        """Path.home() raising (HOME/USERPROFILE unset) must not propagate.
+
+        tropy_config_dir() checks APPDATA (Windows) / XDG_CONFIG_HOME (POSIX)
+        *before* falling back to Path.home() — see its docstring — so on a
+        real machine with either set, mocking Path.home() alone leaves the
+        config dir resolving to the real one. On the maintainer's own
+        machine that real dir has actual Tropy data in it, which made this
+        test see genuine recent projects instead of []. Clearing both env
+        vars is what actually reproduces "no home directory" on any
+        platform, real Tropy install or not.
+        """
 
         def _no_home():
             raise RuntimeError("Could not determine home directory")
 
         monkeypatch.setattr("artifice_ocr.tropy_db.Path.home", _no_home)
+        monkeypatch.delenv("APPDATA", raising=False)
+        monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
         assert recent_projects() == []
 
 
