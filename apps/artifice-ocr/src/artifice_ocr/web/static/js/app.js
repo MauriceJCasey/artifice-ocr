@@ -657,6 +657,14 @@ els["btn-run"].onclick = async () => {
   if (els["stage-segmentation"] && els["stage-segmentation"].checked) {
     const provider = els["seg-provider"] ? els["seg-provider"].value : "";
     if (provider) body.segmentation_provider = provider;
+    if (provider === "diff-residual") {
+      const referenceImage = SegmentationToggle.getReferenceImage();
+      if (!referenceImage) {
+        log("diff-residual needs a reference scan — pick one before running.", "warning");
+        return;
+      }
+      body.segmentation_reference_image = referenceImage;
+    }
   }
   try {
     const result = await api("POST", "/api/run/start", body);
@@ -833,6 +841,7 @@ function renderCompare(container, data, { editableStages = new Set() } = {}) {
   if (data.language) confBits.push(`source: ${escapeHtml(data.language)}`);
   if (data.confidence != null) confBits.push(`confidence ${data.confidence}/100`);
 
+  container.classList.remove("compare-empty");
   container.querySelector(".compare-title").textContent = data.title || "No document selected";
   const confEl = container.querySelector(".compare-conf");
   confEl.textContent = confBits.join("   ");
@@ -876,6 +885,13 @@ function renderCompare(container, data, { editableStages = new Set() } = {}) {
 }
 
 function clearCompare(container) {
+  // Three columns, each disabled and each repeating the same "select a
+  // page" message, read as a wall of dead chrome. Collapsing to one
+  // (CSS: .compare-empty hides the other two panes and every pane-head's
+  // now-pointless Original/Diff/Save-correction buttons) keeps the same
+  // markup — no restructuring of the fragile compare-card grid — while
+  // showing that one message once, not three times.
+  container.classList.add("compare-empty");
   container.querySelector(".compare-title").textContent = "No document selected";
   container.querySelector(".compare-conf").textContent = "";
   // "empty-no-selection" (not renderCompare()'s plain "empty") lets the CSS
@@ -1055,6 +1071,9 @@ const SegmentationToggle = (function () {
   const controls = document.getElementById("segmentation-controls");
   const providerWrap = document.getElementById("seg-provider-wrap");
   const providerSelect = document.getElementById("seg-provider");
+  const referenceWrap = document.getElementById("seg-reference-wrap");
+  const referencePathInput = document.getElementById("seg-reference-path");
+  const referenceBrowseBtn = document.getElementById("btn-seg-reference-browse");
 
   let cachedCapabilities = null;
 
@@ -1083,12 +1102,55 @@ const SegmentationToggle = (function () {
 
   function updateProviderHint() {
     const helpEl = document.getElementById("seg-provider-help");
-    if (!helpEl || !providerSelect) return;
-    const name = providerSelect.value;
-    if (!name) { helpEl.textContent = ""; return; }
-    if (HELP_COPY[name]) { helpEl.textContent = HELP_COPY[name]; return; }
-    const match = (cachedCapabilities || []).find(p => p.name === name);
-    helpEl.textContent = (match && match.requirements) || "";
+    if (helpEl && providerSelect) {
+      const name = providerSelect.value;
+      if (!name) { helpEl.textContent = ""; }
+      else if (HELP_COPY[name]) { helpEl.textContent = HELP_COPY[name]; }
+      else {
+        const match = (cachedCapabilities || []).find(p => p.name === name);
+        helpEl.textContent = (match && match.requirements) || "";
+      }
+    }
+    updateReferenceVisibility();
+  }
+
+  // diff-residual is the only provider that needs a second image (a clean
+  // reference scan to diff against) — every other provider works from the
+  // page alone, so the row stays hidden and irrelevant for them. Clearing
+  // the stored path on hide (rather than just visually hiding it) means
+  // switching away from diff-residual and back never resubmits a reference
+  // picked for a *different* page.
+  function updateReferenceVisibility() {
+    if (!referenceWrap || !providerSelect) return;
+    if (providerSelect.value === "diff-residual") {
+      referenceWrap.style.display = "";
+    } else {
+      referenceWrap.style.display = "none";
+      if (referencePathInput) referencePathInput.value = "";
+    }
+  }
+
+  function getReferenceImage() {
+    return referencePathInput ? referencePathInput.value : "";
+  }
+
+  async function onReferenceBrowse() {
+    if (!referencePathInput) return;
+    let res;
+    try {
+      res = await api("POST", "/api/native/pick-file", { preset: "images" });
+    } catch {
+      if (window.ArtificeToast) window.ArtificeToast.error("Could not reach the server to open the file picker.");
+      return;
+    }
+    if (res.state === "selected" && res.paths && res.paths[0]) {
+      referencePathInput.value = res.paths[0];
+    } else if (res.state === "unavailable") {
+      if (window.ArtificeToast) window.ArtificeToast.show(res.reason || "File picker unavailable", "warning");
+      const raw = prompt("Enter the full path to the reference scan:");
+      if (raw) referencePathInput.value = raw;
+    }
+    // "cancelled" — user closed the dialog on purpose, leave the field as-is.
   }
 
   function populateProviders(providers) {
@@ -1126,8 +1188,11 @@ const SegmentationToggle = (function () {
         populateProviders(providers);
       }
       providerWrap.style.display = "";
+      updateReferenceVisibility();
     } else {
       providerWrap.style.display = "none";
+      if (referenceWrap) referenceWrap.style.display = "none";
+      if (referencePathInput) referencePathInput.value = "";
     }
   }
 
@@ -1141,8 +1206,9 @@ const SegmentationToggle = (function () {
     if (toggle.checked) onToggle();
   }
   if (providerSelect) providerSelect.addEventListener("change", updateProviderHint);
+  if (referenceBrowseBtn) referenceBrowseBtn.addEventListener("click", onReferenceBrowse);
 
-  return { loadCapabilities, getCapabilities, updateProviderHint };
+  return { loadCapabilities, getCapabilities, updateProviderHint, getReferenceImage };
 })();
 
 window.SegmentationToggle = SegmentationToggle;

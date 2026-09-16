@@ -278,8 +278,10 @@ button, input, select { font-family: inherit; font-size: inherit; }
 
 .card-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem 1rem;
   padding: 1rem var(--space-6) 0.5rem;
 }
 
@@ -871,6 +873,25 @@ select.select, .output-row select, .run-row select, label select {
 .compare-text:has(> .empty-no-selection) {
   height: auto;
   min-height: 7rem;
+}
+
+/* clearCompare() (app.js) adds "compare-empty" to the container when
+   nothing is selected. Three disabled RAW OCR / CLEANED / TRANSLATED
+   columns, each with its own dead Original/Diff/Save-correction buttons
+   and its own copy of the same "select a page" message, read as a wall of
+   inert chrome. Collapsing to one — hide the other two panes and every
+   pane-head's now-pointless buttons, let the remaining one span the full
+   width — keeps the markup untouched (no restructuring of the fragile
+   .compare-card--with-image grid, which relies on .compare-panes being
+   auto-placed into its one remaining named cell) while showing that one
+   message once instead of three times. renderCompare() removes the class
+   the moment a real document is selected. */
+.compare-empty .compare-pane-head { display: none; }
+.compare-empty .compare-pane[data-pane="cleaned"],
+.compare-empty .compare-pane[data-pane="translated"] { display: none; }
+.compare-empty .compare-pane[data-pane="raw"] {
+  grid-column: 1 / -1;
+  border-right: none;
 }
 
 /* Source-image pane beside the Raw/Cleaned/Translated panes — shared by

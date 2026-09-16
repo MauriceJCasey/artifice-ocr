@@ -8,13 +8,15 @@ These pin the shared file-dialog contract: every route returns
 ``{"state": ..., "paths": [...], "reason": ...}``, with ``paths`` populated
 only for ``selected`` and ``reason`` only for ``unavailable``.  The
 ``shared_ui.filedialog`` async entry points are monkeypatched on the
-``server`` module, so no test opens a real dialog.
+native-dialogs router module (where the handlers live), so no test opens a
+real dialog.
 """
 
 from pathlib import Path
 
 import pytest
 from artifice_ocr.web import server
+from artifice_ocr.web.routers import native_dialogs
 from fastapi.testclient import TestClient
 from shared_ui.filedialog import DialogResult, DialogState
 
@@ -40,7 +42,7 @@ def client():
 
 
 def _install(monkeypatch, name, state, paths=(), reason=""):
-    """Replace one shared_ui.filedialog async entry point on ``server``.
+    """Replace one shared_ui.filedialog async entry point on the router.
 
     Returns a dict capturing the keyword arguments the route forwarded, so a
     test can assert the FileType filters and default_name the handler built.
@@ -55,7 +57,7 @@ def _install(monkeypatch, name, state, paths=(), reason=""):
             reason=reason,
         )
 
-    monkeypatch.setattr(server, name, fake)
+    monkeypatch.setattr(native_dialogs, name, fake)
     return captured
 
 

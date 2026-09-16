@@ -143,6 +143,11 @@
             </select>
           </label>
           <span id="seg-provider-help" class="settings-field-help" style="flex-basis:100%;" aria-live="polite"></span>
+          <label id="seg-reference-wrap" style="display:none; flex-basis:100%;">
+            Reference scan (clean, unannotated copy of this page)
+            <input type="text" id="seg-reference-path" readonly placeholder="No reference image selected" style="width:100%; max-width:28rem;">
+            <button type="button" class="btn" id="btn-seg-reference-browse">Browse&hellip;</button>
+          </label>
         </div>
 
         <div class="output-row">
@@ -266,7 +271,7 @@
       <div class="card" style="margin-bottom:1rem;">
         <div class="card-head">
           <h2>History</h2>
-          <div style="display:flex; gap:0.5rem; align-items:center;">
+          <div style="display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; justify-content:flex-end;">
             <input type="text" id="history-search" placeholder="Find file&hellip;" style="padding:0.4rem 0.6rem; border-radius:var(--radius-sm); border:1px solid var(--rule); background:var(--paper-recessed);">
             <button type="button" class="btn" id="btn-history-refresh">Refresh</button>
             <button type="button" class="btn" id="btn-history-export-fabricated" title="Open reviewer-labelled OCR examples as JSON">Export flagged OCR</button>

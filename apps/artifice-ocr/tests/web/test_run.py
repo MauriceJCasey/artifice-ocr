@@ -203,6 +203,70 @@ def test_start_run_without_segmentation_provider_disables_it(client, tmp_path):
     assert config.get("segmentation_enabled") is False
 
 
+def test_start_run_diff_residual_without_reference_image_is_rejected(client, tmp_path):
+    """diff-residual needs a reference scan — refuse the run before it starts
+    rather than let it fail loudly per-page deep in the pipeline."""
+    out = tmp_path / "out"
+    out.mkdir()
+
+    res = client.post(
+        "/api/run/start",
+        json={
+            "stages": ["ocr"],
+            "output_dir": str(out),
+            "segmentation_provider": "diff-residual",
+        },
+    )
+    assert res.status_code == 400
+    assert "reference scan" in res.json()["detail"].lower()
+
+
+def test_start_run_diff_residual_with_reference_image_sets_segmentation_options(
+    client, tmp_path
+):
+    """A supplied reference image is validated, stored, and reaches the
+    provider via segmentation_options — the same path segment.py reads."""
+    out = tmp_path / "out"
+    out.mkdir()
+    ref = tmp_path / "reference.png"
+    ref.write_bytes(b"x")
+
+    res = client.post(
+        "/api/run/start",
+        json={
+            "stages": ["ocr"],
+            "output_dir": str(out),
+            "segmentation_provider": "diff-residual",
+            "segmentation_reference_image": str(ref),
+        },
+    )
+    assert res.status_code == 409  # empty queue — proves the request routed through
+    assert config.get("segmentation_options") == {"reference_image": str(ref)}
+
+
+def test_start_run_non_diff_residual_provider_clears_stale_reference_image(client, tmp_path):
+    """A reference image left over from a prior diff-residual run must not
+    silently apply to a run using a different provider."""
+    out = tmp_path / "out"
+    out.mkdir()
+    from artifice_ocr import config as config_module
+
+    config_module.apply_overrides(
+        {"segmentation_options": {"reference_image": "/some/stale/path.png"}}
+    )
+
+    res = client.post(
+        "/api/run/start",
+        json={
+            "stages": ["ocr"],
+            "output_dir": str(out),
+            "segmentation_provider": "passthrough",
+        },
+    )
+    assert res.status_code == 409
+    assert config.get("segmentation_options") == {}
+
+
 def test_start_run_refuses_windows_style_output_dir(client):
     """A Windows-style output directory path is rejected.
 

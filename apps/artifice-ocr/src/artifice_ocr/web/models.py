@@ -25,6 +25,10 @@ class StartRunRequest(BaseModel):
     project: str | None = None
     force: bool = False
     segmentation_provider: str | None = None
+    # Only meaningful when segmentation_provider == "diff-residual", which
+    # needs a clean, unannotated scan of the same page to diff against. Any
+    # other provider ignores this field.
+    segmentation_reference_image: str | None = None
 
 
 class SkipRequest(BaseModel):

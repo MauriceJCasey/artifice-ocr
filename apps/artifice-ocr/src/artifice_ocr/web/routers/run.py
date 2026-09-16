@@ -34,6 +34,23 @@ def start_run(req: StartRunRequest) -> dict:
     overrides = {"segmentation_enabled": bool(req.segmentation_provider)}
     if req.segmentation_provider:
         overrides["segmentation_provider"] = req.segmentation_provider
+    # diff-residual needs a clean reference scan to diff against — see
+    # segmentation/diff_residual.py's options["reference_image"]. Always set
+    # segmentation_options explicitly too, for the same reason as
+    # segmentation_enabled above: a stale reference from a prior diff-residual
+    # run must not silently apply to this one.
+    if req.segmentation_provider == "diff-residual":
+        if not req.segmentation_reference_image:
+            raise HTTPException(
+                status_code=400,
+                detail="diff-residual needs a reference scan — pick one before running.",
+            )
+        reference_path = validate_directory(
+            req.segmentation_reference_image, "segmentation_reference_image"
+        )
+        overrides["segmentation_options"] = {"reference_image": reference_path}
+    else:
+        overrides["segmentation_options"] = {}
     config.apply_overrides(overrides)
     try:
         state.start_run(stages=stages, output_dir=output_dir, force=req.force)

@@ -70,15 +70,11 @@ const HistoryTab = (function () {
       tr.addEventListener("click", () => selectRun(tr));
     });
 
-    itemsBody.innerHTML = "";
-    itemsById.clear();
-    currentItemIds = [];
-    if (btnSendRun) btnSendRun.disabled = true;
-    if (fabricatedToggle) { fabricatedToggle.checked = false; fabricatedToggle.disabled = true; }
-    clearCompare(compareContainer);
-    clearProvenanceChips();
-    if (window.HistoryImage) window.HistoryImage.clear();
-    if (thumbStrip) thumbStrip.innerHTML = "";
+    // renderItems([]) — not a manual `itemsBody.innerHTML = ""` — so the
+    // initial/reset state gets the same "select a run above" empty-state
+    // message selectRun()'s own empty-run case already shows, instead of a
+    // silently blank table with no explanation.
+    renderItems([]);
   }
 
   async function selectRun(tr) {
