@@ -214,6 +214,25 @@ def test_collect_folder_stage_fallback(tmp_path):
     assert pages[0].text == "Raw text"
 
 
+def test_collect_folder_finds_text_nested_under_item_title(tmp_path):
+    """Tropy output nests one level under an item-title subdirectory.
+
+    A non-recursive glob on the stage's text/ dir found nothing there and
+    rejected the stage outright, even though the recursive collection pass
+    right after it would have found the files fine.
+    """
+    from artifice_ocr import pdf_export
+
+    text_dir = tmp_path / "cleaned" / "text" / "Item A"
+    text_dir.mkdir(parents=True)
+    (text_dir / "page1.txt").write_text("Nested page text")
+
+    pages = pdf_export.collect_folder(str(tmp_path), stage="cleaned")
+
+    assert len(pages) == 1
+    assert pages[0].text == "Nested page text"
+
+
 # --------------------------------------------------------------------------- #
 # end-to-end with mocked model
 # --------------------------------------------------------------------------- #
@@ -562,6 +581,25 @@ def test_collect_bilingual_folder_missing_translation(tmp_path):
     assert len(pages) == 2
     assert pages[0].translated_text == "Translated text"
     assert pages[1].translated_text == ""
+
+
+def test_collect_bilingual_folder_finds_text_nested_under_item_title(tmp_path):
+    """Same nested-item-title case as collect_folder, for the bilingual path."""
+    from artifice_ocr import pdf_export
+
+    cleaned_dir = tmp_path / "cleaned" / "text" / "Item A"
+    cleaned_dir.mkdir(parents=True)
+    (cleaned_dir / "page1.txt").write_text("Original text")
+
+    translated_dir = tmp_path / "translated" / "text" / "Item A"
+    translated_dir.mkdir(parents=True)
+    (translated_dir / "page1.txt").write_text("Translated text")
+
+    pages = pdf_export.collect_bilingual_folder(str(tmp_path))
+
+    assert len(pages) == 1
+    assert pages[0].original_text == "Original text"
+    assert pages[0].translated_text == "Translated text"
 
 
 def test_collect_bilingual_folder_no_translated_dir(tmp_path):

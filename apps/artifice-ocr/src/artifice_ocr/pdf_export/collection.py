@@ -140,7 +140,12 @@ def collect_folder(
 
         for s in stage_dirs:
             candidate = stage_dir(folder_path, s) / "text"
-            if candidate.exists() and any(candidate.glob("*.txt")):
+            # Tropy-sourced output nests one level under an item-title
+            # subdirectory (candidate/<item title>/<stem>.txt) — a
+            # non-recursive glob here found nothing and rejected every
+            # stage, even though the recursive rglob() two lines below
+            # (the actual collection pass) would have found them fine.
+            if candidate.exists() and any(candidate.rglob("*.txt")):
                 primary_dir = candidate
                 break
 
@@ -352,10 +357,12 @@ def collect_bilingual_folder(
         log.warning("No cleaned text files found in %s", folder)
         return []
 
-    cleaned_files = {f.stem: f for f in cleaned_dir.glob("*.txt")}
+    # rglob, not glob: Tropy-sourced output nests one level under an
+    # item-title subdirectory (see the matching comment in collect_folder).
+    cleaned_files = {f.stem: f for f in cleaned_dir.rglob("*.txt")}
     translated_files: dict[str, Path] = {}
     if translated_dir is not None:
-        translated_files = {f.stem: f for f in translated_dir.glob("*.txt")}
+        translated_files = {f.stem: f for f in translated_dir.rglob("*.txt")}
 
     pages: list[BilingualPageText] = []
 
@@ -434,6 +441,7 @@ def _find_text_dir(folder_path: Path, stage: str) -> Path | None:
     if any(folder_path.glob("*.txt")) and stage == "cleaned":
         return folder_path
     candidate = stage_dir(folder_path, stage) / "text"
-    if candidate.exists() and any(candidate.glob("*.txt")):
+    # rglob, not glob: see the matching comment in collect_folder.
+    if candidate.exists() and any(candidate.rglob("*.txt")):
         return candidate
     return None
