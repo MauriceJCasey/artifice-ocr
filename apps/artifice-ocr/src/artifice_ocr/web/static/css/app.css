@@ -201,11 +201,12 @@ button, input, select { font-family: inherit; font-size: inherit; }
   vertical-align: middle;
 }
 
-.panels { flex: 1; overflow: hidden; position: relative; }
+.panels { flex: 1; overflow: hidden; position: relative; display: flex; flex-direction: column; }
 
 .panel {
   display: none;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding: 1.25rem 1.4rem;
 }
