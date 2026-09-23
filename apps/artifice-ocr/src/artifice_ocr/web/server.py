@@ -113,7 +113,6 @@ _MASTHEAD_CTX = {
     "shell_variant": "research",
     "brand_accent": "OCR",
     "page_title": "Document workspace",
-    "document_context": "Local archival collection",
     "nav_items": _OCR_NAV_ITEMS,
     "show_inspector": False,
     "show_activity": True,

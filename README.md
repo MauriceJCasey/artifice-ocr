@@ -29,7 +29,7 @@ AGPL-3.0-or-later. See [LICENSE](LICENSE).
 <!-- BEGIN GENERATED DEPENDENCIES (see scripts/export-to-public-repos.sh) -->
 ## Dependencies
 
-This list is generated directly from [`apps/artifice-ocr/pyproject.toml`](apps/artifice-ocr/pyproject.toml) — the actual `dependencies`/`optional-dependencies` tables, not hand-maintained. `.github/workflows/dependency-guard.yml` fails the build if `uv.lock` ever drifts from this file, so any dependency change (including an unreviewed addition) shows up as an explicit, reviewable diff.
+This list is generated directly from [`apps/artifice-ocr/pyproject.toml`](apps/artifice-ocr/pyproject.toml), the actual `dependencies`/`optional-dependencies` tables, not hand-maintained. `.github/workflows/dependency-guard.yml` fails the build if `uv.lock` ever drifts from this file, so any dependency change (including an unreviewed addition) shows up as an explicit, reviewable diff.
 
 **Core:**
 

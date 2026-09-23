@@ -900,7 +900,10 @@ select.select, .output-row select, .run-row select, label select {
   /* Three columns: image | handle(8px) | text(1fr).
      --split-frac is set by SplitResize JS (localStorage); defaults to 1/3.
      calc() guards against an unset variable treating the whole expr as invalid. */
-  grid-template-columns: minmax(320px, calc(var(--split-frac, 0.333) * 100%)) 8px 1fr;
+  /* minmax(0, 1fr), not 1fr: a bare 1fr track can't shrink below its widest
+     non-wrapping content, so the Review compare bar pushed the whole text
+     column past the card edge and clipped the text and Save button. */
+  grid-template-columns: minmax(320px, calc(var(--split-frac, 0.333) * 100%)) 8px minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   grid-template-areas: "image handle bar" "image handle panes";
   height: min(72vh, 54rem);
@@ -913,7 +916,13 @@ select.select, .output-row select, .run-row select, label select {
   border-right: none; /* handle now provides the visual border */
   min-width: 0;
 }
-.compare-card--with-image .compare-bar { grid-area: bar; }
+.compare-card--with-image .compare-bar {
+  grid-area: bar;
+  flex-wrap: wrap;
+  row-gap: var(--space-3);
+  min-width: 0;
+}
+.compare-card--with-image .compare-title { min-width: min(100%, 18rem); overflow-wrap: break-word; }
 .compare-card--with-image .compare-resize-handle { grid-area: handle; }
 /* .compare-panes-wrap (the pane-stage-tabs row plus .compare-panes stacked
    below it) occupies "panes", the same cell .region-list-pane alternates
