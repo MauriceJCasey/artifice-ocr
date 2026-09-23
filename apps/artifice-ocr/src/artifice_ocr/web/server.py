@@ -76,6 +76,7 @@ async def no_cache_static(request: Request, call_next):
         response.headers["Expires"] = "0"
     return response
 
+
 # ── Static assets (resolved through importlib.resources — freeze-safe) ─────
 # Resolved through importlib.resources, NOT a __file__-relative path.  This
 # app is distributed as a frozen .exe/.dmg, where __file__ points inside a
@@ -109,6 +110,7 @@ _OCR_NAV_ITEMS = [
 
 _MASTHEAD_CTX = {
     "app_slug": "artifice-ocr",
+    "shell_variant": "research",
     "brand_accent": "OCR",
     "page_title": "Document workspace",
     "document_context": "Local archival collection",

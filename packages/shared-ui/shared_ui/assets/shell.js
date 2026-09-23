@@ -29,7 +29,7 @@
     list.innerHTML = Array.from(activities.values()).map((item) => `<div class="activity-item" data-state="${item.state}"><span>${item.label}</span><div class="activity-progress" aria-label="${item.progress || 0}% complete"><span style="width:${Math.max(0,Math.min(100,item.progress || 0))}%"></span></div><small>${item.detail || item.state}</small></div>`).join("");
     const count = $("[data-activity-count]"); if (count) count.textContent = String(activities.size);
   }
-  function publishActivity(item) { if (!item || !item.id || !item.label || !item.state) throw new TypeError("Activity requires id, label, and state"); activities.set(item.id, item); renderActivities(); }
+  function publishActivity(item) { if (!item || !item.id || !item.label || !item.state) throw new TypeError("Activity requires id, label, and state"); activities.set(item.id, item); renderActivities(); const list = $("[data-activity-list]"); const heading = $("[data-shell-action=activity]"); if (list && root.dataset.shellVariant === "research") { list.hidden = false; if (heading) heading.setAttribute("aria-expanded", "true"); } }
   function removeActivity(id) { activities.delete(id); renderActivities(); }
   function setModelStatus(status) { const label=$("[data-model-label]"); const dot=$(".status-dot"); if(label) label.textContent=status.label; if(dot) dot.dataset.state=status.state; }
   function syncNavigation() {
@@ -45,6 +45,13 @@
       else link.removeAttribute("aria-current");
     });
   }
+  function quarantineLegacyTabs() {
+    if (root.dataset.shellVariant !== "research") return;
+    document.querySelectorAll(".tabs .tab").forEach((tab) => {
+      tab.setAttribute("tabindex", "-1");
+      tab.setAttribute("aria-hidden", "true");
+    });
+  }
   async function refreshSuiteApps() {
     let apps=[]; try { const response=await fetch("/api/suite/apps"); if(response.ok) apps=await response.json(); } catch (_) { /* popover retains an empty state */ }
     const host=$("[data-suite-apps]"); if(host) host.innerHTML=apps.length ? apps.map((app)=>`<a class="suite-app" href="${app.url || "/?manage="+encodeURIComponent(app.slug)}"><span class="suite-app-dot" style="background:${app.accent}"></span>${app.name}<small>${app.running ? "Running" : "Open in Hub"}</small></a>`).join("") : '<p class="suite-empty">Suite status is unavailable.</p>';
@@ -53,6 +60,7 @@
   function init() {
     getPreferences();
     syncNavigation();
+    quarantineLegacyTabs();
     document.addEventListener("click", async (event) => { const action=event.target.closest("[data-shell-action]")?.dataset.shellAction; if(action==="nav"){const nav=$("[data-shell-panel=nav]");nav.toggleAttribute("data-open");event.target.setAttribute("aria-expanded",String(nav.hasAttribute("data-open")));} if(action==="suite"){const pop=$("[data-suite-popover]");pop.hidden=!pop.hidden;event.target.setAttribute("aria-expanded",String(!pop.hidden));if(!pop.hidden) await refreshSuiteApps();} if(action==="theme"){const order=["system","light","dark"];const current=root.dataset.theme||"system";setPreferences({theme:order[(order.indexOf(current)+1)%order.length]});} if(action==="activity"){const list=$("[data-activity-list]");list.hidden=!list.hidden;event.target.setAttribute("aria-expanded",String(!list.hidden));} });
   }
   window.ArtificeShell={init,publishActivity,removeActivity,setModelStatus,getPreferences,setPreferences,refreshSuiteApps};

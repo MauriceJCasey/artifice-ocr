@@ -127,7 +127,7 @@ def test_ocr_stage_rejects_unsupported_type(mock_get_client, tmp_path):
 
     try:
         ocr.perform(str(test_file))
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError as e:
         assert "Unsupported file type" in str(e)
 
@@ -278,7 +278,7 @@ def test_cleanup_preserves_raw_text_in_json(mock_chat, tmp_path):
     from artifice_ocr.stages import cleanup
 
     out_dir = tmp_path / "output"
-    result = cleanup.perform(raw, source_file="report.tif", output_dir=str(out_dir))
+    cleanup.perform(raw, source_file="report.tif", output_dir=str(out_dir))
 
     json_file = out_dir / "cleaned" / "json" / "report.json"
     data = json.loads(json_file.read_text(encoding="utf-8"))
@@ -350,7 +350,7 @@ def test_translate_stage_uses_prompt_file(mock_chat, tmp_path):
             assert "Ein Test" in messages[1]["content"]
             assert "{text}" not in messages[1]["content"]
             return
-    assert False, "Translation call with system message not found"
+    raise AssertionError("Translation call with system message not found")
 
 
 @patch("artifice_ocr.stages.translate.ollama.Client")
@@ -383,7 +383,7 @@ def test_translate_preserves_cleaned_text_in_json(mock_chat, tmp_path):
     from artifice_ocr.stages import translate
 
     out_dir = tmp_path / "output"
-    result = translate.perform(cleaned, source_file="report.txt", output_dir=str(out_dir))
+    translate.perform(cleaned, source_file="report.txt", output_dir=str(out_dir))
 
     json_file = out_dir / "translated" / "json" / "report.json"
     data = json.loads(json_file.read_text(encoding="utf-8"))

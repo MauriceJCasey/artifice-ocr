@@ -21,7 +21,7 @@ function renderCompare(container, data, { editableStages = new Set() } = {}) {
   if (data.confidence != null) confBits.push(`confidence ${data.confidence}/100`);
 
   container.classList.remove("compare-empty");
-  container.querySelector(".compare-title").textContent = data.title || "No document selected";
+  container.querySelector(".compare-title").textContent = data.title || "Select a page to compare its scan and text.";
   const confEl = container.querySelector(".compare-conf");
   confEl.textContent = confBits.join("   ");
   confEl.className = `compare-conf dim conf-${data.confidence_tier || "none"}`;
@@ -71,13 +71,13 @@ function clearCompare(container) {
   // markup — no restructuring of the fragile compare-card grid — while
   // showing that one message once, not three times.
   container.classList.add("compare-empty");
-  container.querySelector(".compare-title").textContent = "No document selected";
+  container.querySelector(".compare-title").textContent = "Select a page to compare its scan and text.";
   container.querySelector(".compare-conf").textContent = "";
   // "empty-no-selection" (not renderCompare()'s plain "empty") lets the CSS
   // tell this apart from a genuinely selected item whose stage just hasn't
   // run yet, and collapse the pane's height instead of leaving a 46vh gap.
   container.querySelectorAll(".compare-text").forEach(el => {
-    el.innerHTML = `<span class="empty empty-no-selection">Select a page above to compare its stages.</span>`;
+    el.innerHTML = `<span class="empty empty-no-selection">Select a page to compare its scan and text.</span>`;
   });
   container.querySelectorAll(".compare-meta").forEach(el => { el.textContent = ""; });
   container.querySelectorAll(".compare-pane").forEach(el => { delete el.dataset.originalText; });

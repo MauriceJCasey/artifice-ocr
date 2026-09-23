@@ -53,7 +53,7 @@ def test_retry_raises_after_max_attempts():
 
     try:
         always_fail()
-        assert False, "Should have raised"
+        raise AssertionError("Should have raised")
     except ConnectionError:
         pass
 
@@ -67,6 +67,6 @@ def test_retry_ignores_non_retryable_exceptions():
 
     try:
         value_error()
-        assert False, "Should have raised"
+        raise AssertionError("Should have raised")
     except ValueError:
         pass

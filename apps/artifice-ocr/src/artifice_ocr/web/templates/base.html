@@ -23,7 +23,7 @@
 <p class="shell-inspector-copy">Save corrections, select the finished pages in the queue, then add the chosen text stage to their original Tropy photos.</p>
 {% endblock %}
 
-{% block activity %}<p class="activity-empty">OCR stages, exports, and recoverable errors appear here while work is running.</p>{% endblock %}
+{% block activity %}<p class="activity-empty">Progress and recoverable errors appear here while work is running.</p>{% endblock %}
 
 {% block scripts %}
 <script src="/static/js/icons.js?v={{ asset_v }}"></script>
@@ -49,12 +49,13 @@
 <script src="/static/js/preview.js?v={{ asset_v }}"></script>
 <script src="/static/js/regions.js?v={{ asset_v }}"></script>
 <script src="/static/js/history.js?v={{ asset_v }}"></script>
+<script src="/static/js/reading_size.js?v={{ asset_v }}"></script>
 <script src="/static/js/settings.js?v={{ asset_v }}"></script>
 <script src="/shared/byom.js?v={{ asset_v }}"></script>
 <script>
 (function () {
   "use strict";
-  var byom = window.ArtificeByom.autostart({ appName: "ArtificeOCR", onConfigured: function () { byom.close(); } });
+  var byom = window.ArtificeByom.autostart({ appName: "ArtificeOCR", autoOpen: false, onConfigured: function () { byom.close(); } });
 })();
 </script>
 {% block app_scripts %}{% endblock %}

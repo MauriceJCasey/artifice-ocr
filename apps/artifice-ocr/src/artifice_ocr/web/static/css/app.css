@@ -843,7 +843,7 @@ select.select, .output-row select, .run-row select, label select {
   overflow: auto;
   padding: 0.5rem 0.9rem 1rem;
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: var(--review-text-size, 1.125rem);
   line-height: 1.55;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -1076,10 +1076,31 @@ select.select, .output-row select, .run-row select, label select {
   background: transparent;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: var(--review-text-size, 1.125rem);
   line-height: 1.55;
 }
 .raw-edit:focus { outline: none; background: var(--accent-wash); }
+
+.reading-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-faint);
+  font: 600 var(--text-xs)/1.2 var(--font-label);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.reading-size-control select {
+  min-height: 2rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper-recessed);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: 0;
+}
 
 /* ----------------------------------------------------------------- find bar */
 .find-bar {

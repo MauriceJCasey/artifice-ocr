@@ -1,0 +1,20 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * Stage 1 research variant fonts. Loaded only when the app opts into the
+   research shell; legacy apps retain the editorial font families. */
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceSans3.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Source Sans 3";
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url("./fonts/SourceSans3-Italic.woff2") format("woff2");
+}

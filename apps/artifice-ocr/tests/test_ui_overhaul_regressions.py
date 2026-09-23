@@ -112,18 +112,27 @@ def test_history_tropy_handoff_sends_the_open_run_through_shared_panel():
     assert "openTropyExport({ itemIds: [...currentItemIds], isHistory: true })" in history
 
 
-def test_workflow_rail_follows_navigation_processing_and_tropy_return():
+def test_workflow_rail_is_removed_from_the_intake_workspace():
     html = (_WEB / "templates" / "index.html").read_text(encoding="utf-8")
     app = (_WEB / "static" / "js" / "app.js").read_text(encoding="utf-8")
     tropy = (_WEB / "static" / "js" / "tropy.js").read_text(encoding="utf-8")
 
-    assert html.count("data-workflow-step=") == 4
-    assert "function setWorkflowStep(step)" in app
-    assert "setWorkflowStep(workflowStepForTab(tab.dataset.tab))" in app
-    assert "setWorkflowStep(2)" in app
-    assert "window.workflowStepForTab = workflowStepForTab" in app
-    assert "window.setWorkflowStep?.(4)" in tropy
-    assert "window.workflowStepForTab(activeTab)" in tropy
+    assert "workflow-rail" not in html
+    assert "data-workflow-step=" not in html
+    assert "function setWorkflowStep(step)" not in app
+    assert "workflowStepForTab" not in app
+    assert "setWorkflowStep" not in tropy
+
+
+def test_review_exposes_a_persisted_reading_size_control():
+    html = (_WEB / "templates" / "index.html").read_text(encoding="utf-8")
+    css = (_WEB / "static" / "css" / "app.css").read_text(encoding="utf-8")
+    script = (_WEB / "static" / "js" / "reading_size.js").read_text(encoding="utf-8")
+    assert html.count("data-reading-size") == 2
+    for size in ("16px", "18px", "20px", "24px"):
+        assert size in script
+    assert "--review-text-size" in css
+    assert "artifice.ocr.review-text-size" in script
 
 
 def test_tropy_workspace_exposes_only_live_browse_and_developer_api():
@@ -152,7 +161,7 @@ def test_tropy_first_workspace_removes_unrelated_surfaces_and_exposes_pages():
     base = (_WEB / "templates" / "base.html").read_text(encoding="utf-8")
     js = (_WEB / "static" / "js" / "tropy.js").read_text(encoding="utf-8")
 
-    assert "Tropy round trip" in html
+    assert "workflow-rail" not in html
     assert "Choose Tropy pages" in html
     assert 'id="stage-title"' in html
     assert re.search(r'id="stage-ocr"[^>]*checked[^>]*disabled', html)
