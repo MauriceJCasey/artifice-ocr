@@ -1,16 +1,52 @@
-# Artifice OCR
+<p align="center">
+  <img src="packages/shared-ui/shared_ui/assets/logos/artifice-ocr.png" width="140" alt="Artifice OCR logo">
+</p>
 
-[![safety-tests](https://github.com/MauriceJCasey/artifice-ocr/actions/workflows/safety-tests.yml/badge.svg)](https://github.com/MauriceJCasey/artifice-ocr/actions/workflows/safety-tests.yml)
-[![REUSE status](https://api.reuse.software/badge/github.com/MauriceJCasey/artifice-ocr)](https://api.reuse.software/info/github.com/MauriceJCasey/artifice-ocr)
+<h1 align="center">Artifice OCR</h1>
 
-A local-first, bring-your-own-model (BYOM) pipeline for historical document OCR, cleanup, and
-translation. Runs against a local LLM server (Ollama, LM Studio, or any OpenAI-compatible
-endpoint) — no document ever leaves your machine unless you point it at a remote API yourself.
+<p align="center">
+  <a href="https://github.com/MauriceJCasey/artifice-ocr/actions/workflows/safety-tests.yml"><img src="https://github.com/MauriceJCasey/artifice-ocr/actions/workflows/safety-tests.yml/badge.svg" alt="safety-tests"></a>
+  <a href="https://api.reuse.software/info/github.com/MauriceJCasey/artifice-ocr"><img src="https://api.reuse.software/badge/github.com/MauriceJCasey/artifice-ocr" alt="REUSE status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg" alt="License"></a>
+  <img src="https://img.shields.io/badge/version-0.6.0-informational" alt="Version 0.6.0">
+</p>
 
-## ⚠️ Development status
+A local-first OCR pipeline for historical documents that integrates with
+[Tropy](https://github.com/tropy/tropy).
 
-**Active development, early stage.** This is provided as-is for developers and advanced users
-comfortable troubleshooting local models. Expect bugs, breaking changes, and rough edges.
+Artifice OCR, combined with a vision language model, reads scans and photographs. Optional
+pre-processing breaks pages into segments. Cleanup and translate stages using models are also
+supported. Easy-to-use editing tools make human-in-the-loop verification seamless.
+
+Artifice OCR is designed with open source local models such as
+[olmOCR](https://github.com/allenai/olmocr) and [Churro](https://github.com/stanford-oval/Churro)
+in mind, and is particularly attuned to olmOCR-2. Nothing leaves your machine unless you point
+it at a remote API yourself.
+
+**⚠️ Active development, early stage.** Expect rough edges. This is for people comfortable
+troubleshooting local models.
+
+## What it does
+
+- **OCR.** Reads scans and photographs of historical documents using a vision language model,
+  such as olmOCR-2 or Churro.
+- **Pre-processing.** Optional segmentation breaks a page into regions before OCR, useful for
+  multi-column layouts, mixed print and marginalia, or bound volumes photographed two pages at
+  a time.
+- **Cleanup.** An optional model pass tidies up raw OCR noise (broken words, stray characters,
+  layout artefacts) into readable text.
+- **Translate.** An optional model pass translates the cleaned text.
+- **Review.** Side-by-side scan and text comparison, in-place correction, a diff against the
+  original OCR, and re-running later stages after a fix make human-in-the-loop verification
+  straightforward rather than an afterthought.
+- **Tropy integration.** Reads pages directly from a Tropy project and can write processed text
+  and notes back to it.
+
+Each stage runs against your own model server: Ollama, LM Studio, or anything OpenAI-compatible.
+
+<p align="center">
+  <img src="docs/images/artifice-ocr-workflow.gif" width="880" alt="Artifice OCR workflow: a processed page in the queue, its scan beside the raw OCR, cleaned and translated text, then an OCR error corrected and saved">
+</p>
 
 ## Getting started
 
@@ -19,12 +55,14 @@ uv sync --extra web
 uv run artifice-ocr-web
 ```
 
-See `apps/artifice-ocr/` for the application itself and `packages/` for the shared support
-libraries it depends on (model harness, output layout, secure I/O, shared UI assets).
+This opens a local web interface at `http://localhost:8765`.
 
 ## License
 
 AGPL-3.0-or-later. See [LICENSE](LICENSE).
+
+<details>
+<summary>Dependencies</summary>
 
 <!-- BEGIN GENERATED DEPENDENCIES (see scripts/export-to-public-repos.sh) -->
 ## Dependencies
@@ -80,3 +118,5 @@ This list is generated directly from [`apps/artifice-ocr/pyproject.toml`](apps/a
 
 For the complete resolved dependency tree (including transitive dependencies), see `uv.lock` at the repo root, or run `uv tree`.
 <!-- END GENERATED DEPENDENCIES -->
+
+</details>
