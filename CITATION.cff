@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Artifice OCR"
+abstract: >-
+  A local-first, bring-your-own-model (BYOM) pipeline for historical document
+  OCR, cleanup, and translation, built around a structured model-interaction
+  harness rather than a freeform chat interface. Runs against a local LLM
+  server (Ollama, LM Studio, or any OpenAI-compatible endpoint) so documents
+  never leave the researcher's machine unless explicitly pointed at a remote
+  API.
+type: software
+authors:
+  - family-names: Casey
+    given-names: Maurice J.
+    affiliation: "Queen's University Belfast"
+    orcid: "https://orcid.org/0000-0001-6019-3578"
+    website: "https://mauricejcasey.com"
+repository-code: "https://github.com/MauriceJCasey/artifice-ocr"
+url: "https://www.mauricejcasey.com/tools"
+license: AGPL-3.0-or-later
+version: 0.6.0
+date-released: "2026-09-23"
+keywords:
+  - digital humanities
+  - optical character recognition
+  - local-first
+  - large language models
