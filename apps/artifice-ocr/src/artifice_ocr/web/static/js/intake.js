@@ -192,7 +192,7 @@ els["dropzone"].addEventListener("drop", async (e) => {
   els["dropzone"].classList.remove("drag");
   if (isDesktop) {
     // Desktop: native drag-drop paths are out of scope — fall back to Browse.
-    log("Drag-and-drop is not available in desktop mode — use Browse Files.", "warning");
+    log("Drag-and-drop is not available in desktop mode — use Add files.", "warning");
     return;
   }
 

@@ -22,7 +22,7 @@ const Palette = (function () {
       { label: "History", icon: Icons.chevron, action: () => activateTab("history"), shortcut: "3" },
       { label: "Settings", icon: Icons.chevron, action: () => activateTab("settings"), shortcut: "4" },
       // Queue actions
-      { label: "Browse Files", icon: Icons.file, action: () => document.getElementById("btn-browse-files")?.click() },
+      { label: "Add files", icon: Icons.file, action: () => document.getElementById("btn-browse-files")?.click() },
       { label: "Add Folder", icon: Icons.folderPlus, action: () => document.getElementById("btn-add-folder")?.click() },
       { label: "Add from Tropy", icon: Icons.file, action: () => document.getElementById("btn-add-tropy")?.click() },
       { label: "Clear Queue", icon: Icons.trash, action: () => document.getElementById("btn-clear")?.click() },

@@ -137,7 +137,7 @@ def test_real_vision_ocr_from_visible_ui(
             overlay = page.locator(".byom-overlay")
             if overlay.count():
                 page.locator(".byom-close").click()
-            page.locator('.shell-nav a[href="/?view=settings"]').click()
+            page.locator('.shell-titlebar-nav a[href="/?view=settings"]').click()
             expect(page.locator("#panel-settings")).to_have_class(
                 re.compile("active"), timeout=10_000
             )
@@ -161,7 +161,7 @@ def test_real_vision_ocr_from_visible_ui(
             assert config.get("ocr_model") == expected_model
             assert config.get(url_key) == url
 
-            page.locator('.shell-nav a[href="/?view=main"]').click()
+            page.locator('.shell-titlebar-nav a[href="/?view=main"]').click()
             expect(page.locator("#queue-body tr[data-id]")).to_have_count(1)
             if page.locator("#stage-cleanup").is_checked():
                 page.locator("#stage-cleanup").uncheck()

@@ -36,15 +36,11 @@ def _tab(page, name: str) -> None:
     # Exercise the visible application-shell navigation. The legacy .tab
     # controls remain in the DOM as the panel controller but are intentionally
     # visually clipped by shell.css.
-    page.locator(f'.shell-nav a[href="/?view={name}"]').click()
+    page.locator(f'.shell-titlebar-nav a[href="/?view={name}"]').click()
     _dismiss_onboarding(page)
     expect(page.locator(f"#panel-{name}")).to_be_visible()
     if name == "settings":
         expect(page.locator("#set-max_ocr_workers")).not_to_have_value("")
-    expected_step = 3 if name in {"preview", "history"} else 1
-    expect(page.locator(f'[data-workflow-step="{expected_step}"]')).to_have_attribute(
-        "aria-current", "step"
-    )
 
 
 def _assert_invariants(page) -> None:
@@ -100,7 +96,7 @@ def _actions(page, rng: random.Random):
         if picker.input_value():
             picker.select_option(index=rng.randrange(picker.locator("option").count()))
             expect(page.locator("#panel-preview .compare-title")).not_to_have_text(
-                "No document selected"
+                "Select a page to compare its scan and text."
             )
             expect(page.locator("#btn-reprocess")).to_be_enabled()
 
@@ -147,10 +143,8 @@ def _actions(page, rng: random.Random):
         expect(send).to_be_enabled()
         send.click()
         expect(page.locator("#modal-tropy-send")).to_be_visible()
-        expect(page.locator('[data-workflow-step="4"]')).to_have_attribute("aria-current", "step")
         page.locator("#btn-send-tropy-close-writeback").click()
         expect(page.locator("#modal-tropy-send")).to_be_hidden()
-        expect(page.locator('[data-workflow-step="3"]')).to_have_attribute("aria-current", "step")
 
     def open_close_tropy():
         _tab(page, "main")

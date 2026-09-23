@@ -45,7 +45,6 @@ function connectEvents() {
         startTime = Date.now();
         finishedCount = 0;
         setRunning(true);
-        setWorkflowStep(2);
         els["stage-text"].textContent = "";
         break;
       case "stage_started":
@@ -91,7 +90,6 @@ document.querySelectorAll(".tab").forEach(tab => {
     document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
     tab.classList.add("active");
     document.getElementById(`panel-${tab.dataset.tab}`).classList.add("active");
-    setWorkflowStep(workflowStepForTab(tab.dataset.tab));
     TAB_ACTIVATE[tab.dataset.tab]?.();
   });
 });

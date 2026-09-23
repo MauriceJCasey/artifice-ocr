@@ -754,15 +754,11 @@
   border-radius: var(--radius-md);
   background-color: var(--accent);
   color: var(--paper);
-  box-shadow: 3px 3px 0 var(--paper-recessed);
   cursor: pointer;
-  transition: background-color var(--duration-normal) ease, box-shadow var(--duration-normal) var(--ease-primary),
-              transform var(--duration-normal) var(--ease-primary);
+  transition: background-color var(--duration-normal) var(--ease-primary), border-color var(--duration-normal) var(--ease-primary);
 }
 .byom-btn-primary:hover:not(:disabled) {
   background-color: var(--accent-deep);
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--ink);
 }
 .byom-btn-primary:active:not(:disabled) { transform: translateY(1px); }
 .byom-btn-primary:disabled { opacity: 0.55; cursor: default; }

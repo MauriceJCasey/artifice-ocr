@@ -210,7 +210,9 @@ const PreviewTab = (function () {
         // visibility and the tab buttons' active class — call it here too
         // instead of duplicating its logic, which previously left "Whole
         // page" marked active even while the regions pane was the one shown.
-        setReviewMode(hasRegions ? "regions" : "whole");
+        // Segmentation is an explicit alternate view. Keep the full-page
+        // reading surface as the default even when PAGE regions are present.
+        setReviewMode("whole");
         if (hasRegions) {
           // Redraw crops after the image has loaded in PreviewImage.
           const imgEl = document.getElementById("preview-image");

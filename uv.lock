@@ -261,7 +261,7 @@ dev = []
 
 [[package]]
 name = "artifice-ocr"
-version = "0.4.0"
+version = "0.6.0"
 source = { editable = "apps/artifice-ocr" }
 dependencies = [
     { name = "artifice-model-harness" },

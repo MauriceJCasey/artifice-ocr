@@ -1,0 +1,293 @@
+/* SPDX-FileCopyrightText: 2026 Maurice Casey
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ *
+ * Hallmark · macrostructure: Workbench · tone: research instrument · anchor hue: neutral
+ */
+
+[data-shell-variant="research"] {
+  /* Editorial paper and ink, shared with the current OCR redesign. */
+  --paper: #f6f3ea;
+  --paper-raised: #fbf9f3;
+  --paper-recessed: #efebdf;
+  --ink: #1b1813;
+  --ink-soft: #4b463d;
+  --ink-faint: #635e51;
+  --rule: #ddd6c6;
+  --rule-dark: #45413a;
+  --gold: #bf9b30;
+  --accent: #715993;
+  --accent-deep: #584179;
+  --accent-wash: rgba(113, 89, 147, 0.09);
+  --success: #455f2b;
+  --warning: #7c5e1a;
+  --error: #a8322b;
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "Libre Baskerville", Georgia, serif;
+  --font-label: "Archivo", "Franklin Gothic Medium", "Arial Narrow", sans-serif;
+  --text-base: 1.0625rem;
+  --text-sm: 0.8rem;
+  --text-xs: 0.72rem;
+  --label-tracking: 0.16em;
+  --shadow-paper: 0 1px 2px rgba(27, 24, 19, 0.05), 0 10px 28px -14px rgba(27, 24, 19, 0.18);
+  --shadow-lifted: 0 2px 4px rgba(27, 24, 19, 0.07), 0 22px 44px -18px rgba(27, 24, 19, 0.28);
+  --shadow-nav: 0 6px 24px -16px rgba(27, 24, 19, 0.3);
+  --shadow-modal: 0 4px 24px -4px rgba(27, 24, 19, 0.35);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shell-title: 4rem;
+}
+
+[data-shell-variant="research"] body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+/* Direction A — single rule bar: brand, tabs and utilities share one
+   paper-raised titlebar, closed off by one ink rule at its bottom edge.
+   The active tab's gold underline sits flush on that rule, reading as a
+   break in the line itself rather than a bolted-on accent. The old
+   two-row titlebar-over-black-rail layout is gone; the tab rail
+   (.shell-nav aside) is hidden in favour of .shell-titlebar-nav, below. */
+[data-shell-variant="research"] .shell-titlebar {
+  border-top: 4px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper-raised);
+  box-shadow: var(--shadow-nav);
+}
+
+[data-shell-variant="research"] .shell-brand,
+[data-shell-variant="research"] .suite-popover strong,
+[data-shell-variant="research"] .shell-inspector h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+[data-shell-variant="research"] .shell-inspector,
+[data-shell-variant="research"] .shell-activity {
+  background: var(--paper-raised);
+  border-color: var(--rule);
+}
+
+[data-shell-variant="research"] .shell-nav {
+  display: none;
+}
+
+[data-shell-variant="research"] .app-shell,
+[data-shell-variant="research"] .app-shell:has(.shell-inspector) {
+  grid-template: var(--shell-title) minmax(0, 1fr) auto /
+    minmax(0, 1fr) minmax(16rem, var(--shell-inspector));
+}
+
+[data-shell-variant="research"] .shell-menu {
+  display: none;
+}
+
+[data-shell-variant="research"] .shell-titlebar-divider {
+  align-self: stretch;
+  width: 1px;
+  margin: var(--space-4) 0;
+  background: var(--rule);
+}
+
+[data-shell-variant="research"] .shell-titlebar-nav {
+  align-self: stretch;
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow-x: auto;
+}
+
+[data-shell-variant="research"] .shell-titlebar-nav a {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  flex: 0 0 auto;
+  padding: 0 var(--space-5);
+  border-bottom: 3px solid transparent;
+  color: var(--ink-soft);
+  font-family: var(--font-label);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  text-transform: uppercase;
+  letter-spacing: var(--label-tracking);
+  text-decoration: none;
+}
+
+[data-shell-variant="research"] .shell-titlebar-nav a:hover {
+  background: var(--paper-recessed);
+  color: var(--ink);
+}
+
+[data-shell-variant="research"] .shell-titlebar-nav a[aria-current="page"] {
+  border-bottom-color: var(--gold);
+  color: var(--ink);
+}
+
+[data-shell-variant="research"] .shell-workspace {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+[data-shell-variant="research"] .app-shell:has(.shell-inspector) .shell-workspace {
+  grid-column: 1;
+}
+
+[data-shell-variant="research"] .shell-inspector {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+[data-shell-variant="research"] .shell-activity {
+  grid-column: 1 / -1;
+  grid-row: 3;
+}
+
+/* Utility cluster: status / theme / suite read as one control group,
+   separated from native window chrome by a rule instead of proximity. */
+[data-shell-variant="research"] .shell-title-actions {
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-full);
+  background: var(--paper-recessed);
+  margin-right: var(--space-4);
+}
+
+[data-shell-variant="research"] .shell-title-actions > *:not(:last-child) {
+  border-right: 1px solid var(--rule);
+}
+
+[data-shell-variant="research"] .shell-status {
+  white-space: nowrap;
+}
+
+[data-shell-variant="research"] .window-controls {
+  border-left: 1px solid var(--rule);
+}
+
+/* Nav tabs are the one element allowed to shrink below its content size —
+   everything else (brand, utility cluster, window chrome) keeps its
+   natural minimum and the tab rail scrolls horizontally instead. */
+[data-shell-variant="research"] .shell-titlebar-nav {
+  flex-shrink: 1;
+  min-width: 4rem;
+}
+
+[data-shell-variant="research"] button,
+[data-shell-variant="research"] input,
+[data-shell-variant="research"] select,
+[data-shell-variant="research"] textarea {
+  font-family: var(--font-body);
+}
+
+[data-shell-variant="research"] button:focus-visible,
+[data-shell-variant="research"] a:focus-visible,
+[data-shell-variant="research"] input:focus-visible,
+[data-shell-variant="research"] select:focus-visible,
+[data-shell-variant="research"] textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[data-shell-variant="research"] .shell-status {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--text-sm);
+}
+
+[data-shell-variant="research"] .suite-popover {
+  border: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
+  box-shadow: var(--shadow-modal);
+}
+
+/* Keep ordinary research panes quiet; overlays retain restrained elevation. */
+[data-shell-variant="research"] .card,
+[data-shell-variant="research"] .panel,
+[data-shell-variant="research"] .workspace-card,
+[data-shell-variant="research"] .inspector-card {
+  border: 1px solid var(--rule);
+  border-top: 1px solid var(--rule);
+  box-shadow: none;
+}
+
+/* Progress communicates state through its fill and value, without sliding UI. */
+[data-shell-variant="research"] .progress-bar,
+[data-shell-variant="research"] .mini-progress > div,
+[data-shell-variant="research"] .dlg-model-bar-fill {
+  transition: none;
+}
+
+[data-shell-variant="research"] .progress-bar,
+[data-shell-variant="research"] .mini-progress,
+[data-shell-variant="research"] .dlg-model-bar-track {
+  border-radius: var(--radius-sm);
+}
+
+[data-shell-variant="research"][data-app="artifice-ocr"] {
+  --accent: #006b52;
+  --accent-deep: #00513e;
+  --accent-wash: #e4f1ed;
+}
+
+[data-shell-variant="research"][data-app="transcribe"] {
+  --accent: #655080;
+  --accent-deep: #584179;
+  --accent-wash: rgba(101, 80, 128, 0.10);
+}
+
+[data-shell-variant="research"][data-theme="dark"] {
+  --paper: #161310;
+  --paper-raised: #1f1b16;
+  --paper-recessed: #100e0b;
+  --ink: #e8e2d3;
+  --ink-soft: #beb5a3;
+  --ink-faint: #a39a88;
+  --rule: #38332b;
+  --rule-dark: #5b554a;
+  --gold: #bf9b30;
+  --accent-wash: rgba(113, 89, 147, 0.20);
+  --success: #67a04b;
+  --warning: #e4cb81;
+  --error: #dd5555;
+  --shadow-lifted: 0 2px 4px rgba(0, 0, 0, 0.5), 0 22px 42px -16px rgba(0, 0, 0, 0.7);
+  --shadow-modal: 0 4px 24px -4px rgba(0, 0, 0, 0.6);
+}
+
+[data-shell-variant="research"][data-theme="dark"][data-app="transcribe"] {
+  --accent: #9178b4;
+  --accent-deep: #c6b7dc;
+  --accent-wash: rgba(145, 120, 180, 0.20);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-shell-variant="research"]:not([data-theme="light"]) {
+    --paper: #161310;
+    --paper-raised: #1f1b16;
+    --paper-recessed: #100e0b;
+    --ink: #e8e2d3;
+    --ink-soft: #beb5a3;
+    --ink-faint: #a39a88;
+    --rule: #38332b;
+    --rule-dark: #5b554a;
+    --gold: #bf9b30;
+    --accent-wash: rgba(113, 89, 147, 0.20);
+    --success: #67a04b;
+    --warning: #e4cb81;
+    --error: #dd5555;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-shell-variant="research"] *,
+  [data-shell-variant="research"] *::before,
+  [data-shell-variant="research"] *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

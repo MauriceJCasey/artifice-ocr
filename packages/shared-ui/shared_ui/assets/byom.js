@@ -1302,11 +1302,11 @@
       btn.setAttribute(
         "aria-label",
         configured
-          ? "Connection configured. Open connection settings."
-          : "Connection not configured. Open connection settings."
+          ? "Connection configured."
+          : "Set up connection"
       );
       var label = btn.querySelector("[data-model-label]");
-      if (label) label.textContent = configured ? "Connection configured" : "Set up model";
+      if (label) label.textContent = configured ? "Connection configured" : "Set up connection";
       var dot = btn.querySelector(".status-dot");
       if (dot) dot.setAttribute("data-state", configured ? "configured" : "unconfigured");
     });
@@ -1320,9 +1320,10 @@
     });
   }
 
-  // Creates the singleton (once) and performs exactly the auto-open check
-  // every base.html used to inline: fetch state, open only if not
-  // configured. Deliberately uses window.fetch directly rather than
+  // Creates the singleton (once) and checks connection state. Hosts may opt
+  // out of automatic opening with `autoOpen: false` so optional setup remains
+  // discoverable without blocking the first workspace. Deliberately uses
+  // window.fetch directly rather than
   // opts.fetchImpl — that override exists for byom-preview.html to feed
   // fixture data to the *modal's own* state fetch inside open()/_refresh(),
   // and the original four bootstraps never routed their own check through
@@ -1334,7 +1335,7 @@
       .then(function (r) { return r.json(); })
       .then(function (state) {
         _setNavTriggerState(!!(state && state.configured));
-        if (!state.configured) { _instance.open(); }
+        if (!state.configured && opts.autoOpen !== false) { _instance.open(); }
       })
       ["catch"](function () { /* server not ready yet — fine */ });
     return _instance;

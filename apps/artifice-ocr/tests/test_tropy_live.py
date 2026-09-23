@@ -366,7 +366,7 @@ def test_real_tropy_browse_queue_and_note_round_trip(tmp_path):
                     )
                     if page.locator(".byom-overlay").count():
                         page.locator(".byom-close").click()
-                    page.locator('.shell-nav a[href="/?view=history"]').click()
+                    page.locator('.shell-titlebar-nav a[href="/?view=history"]').click()
                     run = page.locator("#history-runs-body tr[data-id]").first
                     expect(run).to_be_visible(timeout=10_000)
                     run.click()

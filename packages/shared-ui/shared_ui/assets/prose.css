@@ -167,6 +167,42 @@ body:has(.page-prose) .masthead-search {
   padding-left: 1.25rem;
 }
 
+/* Compact external links on About pages: the mark carries recognition while
+   the text keeps the destination clear and usable with screen readers. */
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  font-family: var(--font-label);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  transition: border-color 0.2s var(--ease-primary), color 0.2s var(--ease-primary), background 0.2s var(--ease-primary);
+}
+
+.about-link:hover,
+.about-link:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent-deep);
+}
+
+.about-link-mark {
+  width: 1.1rem;
+  height: 1.1rem;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
 /* ── Inline code block (.mono) ───────────────────────────────────────────
    Used by every about.html's "Run it" <pre class="mono">. Undefined
    anywhere in the repo before this file — including in graph, which also

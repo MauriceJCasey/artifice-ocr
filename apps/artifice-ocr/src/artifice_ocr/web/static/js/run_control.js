@@ -60,7 +60,6 @@ els["btn-run"].onclick = async () => {
     const result = await api("POST", "/api/run/start", body);
     if (result.output_dir) els["output-dir"].value = result.output_dir;
     setRunning(true);
-    setWorkflowStep(2);
     els["progress-bar"].style.width = "0%";
     const pv = els["progress-value"];
     if (pv) pv.textContent = "0%";

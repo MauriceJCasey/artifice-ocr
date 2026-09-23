@@ -27,6 +27,7 @@ const HistoryTab = (function () {
   const thumbStrip = document.getElementById("history-thumbnails");
   const fabricatedToggle = document.getElementById("history-fabricated-result");
   const btnSendRun = document.getElementById("btn-history-send-tropy");
+  const stageTabs = document.querySelectorAll("#history-pane-stage-tabs .pane-stage-btn");
 
   let runsById = new Map();
   let itemsById = new Map();
@@ -37,6 +38,25 @@ const HistoryTab = (function () {
   const originalText = { raw: "", cleaned: "", translated: "" };
   let autoSaveTimer = null;
   let currentItemIds = [];
+  let activePane = "raw";
+
+  // History uses the same focused reading surface as Review. Keep one stage
+  // visible at a time so the source image and the selected text have room to
+  // breathe; Raw OCR is the stable default for every new selection.
+  function setPaneTab(key = "raw") {
+    activePane = key;
+    stageTabs.forEach((btn) => {
+      const active = btn.dataset.pane === key;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    compareContainer.querySelectorAll(".compare-pane").forEach((pane) => {
+      pane.style.display = pane.dataset.pane === key ? "" : "none";
+    });
+  }
+
+  stageTabs.forEach((btn) => btn.addEventListener("click", () => setPaneTab(btn.dataset.pane)));
+  setPaneTab();
 
   const paneConfigs = {
     raw: {
@@ -109,6 +129,7 @@ const HistoryTab = (function () {
       tr.addEventListener("click", () => selectItem(tr));
     });
     clearCompare(compareContainer);
+    setPaneTab();
     clearProvenanceChips();
     if (window.HistoryImage) window.HistoryImage.clear();
     if (thumbStrip) thumbStrip.innerHTML = "";
@@ -197,6 +218,7 @@ const HistoryTab = (function () {
       wireAllPanes();
       wireOriginalToggles(compareContainer);
       wireCrossHighlight(compareContainer);
+      setPaneTab(activePane);
       originalText[key] = textarea.value;
       if (window.ArtificeToast) window.ArtificeToast.success(`${key.charAt(0).toUpperCase() + key.slice(1)} text saved.`);
     } catch (err) {
@@ -313,6 +335,7 @@ const HistoryTab = (function () {
     }, { editableStages: new Set(["raw", "cleaned", "translated"]) });
     wireAllPanes();
     wireOriginalToggles(compareContainer);
+    setPaneTab();
     renderProvenanceChips(data);
     if (fabricatedToggle) {
       fabricatedToggle.checked = !!data.fabricated_result;
@@ -349,6 +372,7 @@ const HistoryTab = (function () {
       if (window.HistoryImage) window.HistoryImage.fitToPane();
     } else if (e.key === "Escape") {
       clearCompare(compareContainer);
+      setPaneTab();
       clearProvenanceChips();
       if (window.HistoryImage) window.HistoryImage.clear();
       if (thumbStrip) thumbStrip.innerHTML = "";

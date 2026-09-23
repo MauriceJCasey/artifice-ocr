@@ -21,13 +21,6 @@
 
   <div class="panels">
 
-    <ol class="workflow-rail" aria-label="Tropy round trip">
-      <li class="active" data-workflow-step="1" aria-current="step"><span>1</span><strong>Source</strong><small>Choose Tropy pages</small></li>
-      <li data-workflow-step="2"><span>2</span><strong>Process</strong><small>OCR and clean</small></li>
-      <li data-workflow-step="3"><span>3</span><strong>Review</strong><small>Edit beside the scan</small></li>
-      <li data-workflow-step="4"><span>4</span><strong>Return</strong><small>Add notes or compile</small></li>
-    </ol>
-
     <!-- ================================================================ MAIN -->
     <section class="panel active" id="panel-main">
 
@@ -55,8 +48,8 @@
               <polyline points="17 8 12 3 7 8"/>
               <line x1="12" y1="3" x2="12" y2="15"/>
             </svg>
-            <span class="dropzone-title">Drop image files here</span>
-            <span class="dropzone-hint" id="dropzone-hint">or click to browse</span>
+            <span class="dropzone-title">Drop image files here, or choose files to browse.</span>
+            <span class="dropzone-hint" id="dropzone-hint"></span>
           </div>
           <div class="dropzone-state hidden" id="dropzone-uploading">
             <span class="spinner" aria-hidden="true"></span>
@@ -105,13 +98,13 @@
         </div>
 
         <div class="toolbar">
-          <button type="button" class="btn" id="btn-browse-files">Browse files</button>
+          <button type="button" class="btn" id="btn-browse-files">Add files</button>
           <button type="button" class="btn" id="btn-add-folder">Add folder</button>
           <button type="button" class="btn danger" id="btn-remove">Remove Selected</button>
           <button type="button" class="btn danger" id="btn-clear">Clear All</button>
           <div class="rule-v"></div>
           <button type="button" class="btn" id="btn-skip">Skip</button>
-          <button type="button" class="btn" id="btn-retry">Retry</button>
+          <button type="button" class="btn" id="btn-retry">Retry selected</button>
           <button type="button" class="btn" id="btn-batch-correct">Batch Correct&hellip;</button>
           <div class="spacer"></div>
           <button type="button" class="btn" id="btn-compile-pdf">Compile PDF&hellip;</button>
@@ -195,11 +188,16 @@
         </div>
         <div class="compare-resize-handle" id="preview-resize-handle" aria-label="Drag to resize" role="separator" tabindex="-1"></div>
         <div class="compare-bar">
-          <h2 class="compare-title">No document selected</h2>
+          <h2 class="compare-title">Select a page to compare its scan and text.</h2>
           <select id="preview-item-select" class="select"></select>
           <span class="compare-conf dim"></span>
           <label class="fabricated-toggle" title="Mark OCR that invents text not present in the source image">
             <input type="checkbox" id="preview-fabricated-result" disabled> Fabricated result
+          </label>
+          <label class="reading-size-control" for="preview-reading-size">Text size
+            <select id="preview-reading-size" data-reading-size aria-label="Review text size">
+              <option value="16px">16</option><option value="18px" selected>18</option><option value="20px">20</option><option value="24px">24</option>
+            </select>
           </label>
           <button class="btn" id="btn-reprocess" type="button" disabled style="margin-left:0.5rem;" title="Re-run downstream stages after correction">Re-process</button>
           <span class="spacer"></span>
@@ -225,7 +223,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page to compare its scan and text.</span></div>
           </div>
           <div class="compare-pane" data-pane="cleaned" style="display:none;">
             <div class="compare-pane-head">
@@ -237,7 +235,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page to compare its scan and text.</span></div>
           </div>
           <div class="compare-pane" data-pane="translated" style="display:none;">
             <div class="compare-pane-head">
@@ -249,7 +247,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page to compare its scan and text.</span></div>
           </div>
         </div>
         </div>
@@ -321,11 +319,22 @@
         </div>
         <div class="compare-resize-handle" id="history-resize-handle" aria-label="Drag to resize" role="separator" tabindex="-1"></div>
         <div class="compare-bar">
-          <h2 class="compare-title">No document selected</h2>
+          <h2 class="compare-title">Select a page to compare its scan and text.</h2>
           <span class="compare-conf dim"></span>
           <label class="fabricated-toggle" title="Mark OCR that invents text not present in the source image">
             <input type="checkbox" id="history-fabricated-result" disabled> Fabricated result
           </label>
+          <label class="reading-size-control" for="history-reading-size">Text size
+            <select id="history-reading-size" data-reading-size aria-label="History text size">
+              <option value="16px">16</option><option value="18px" selected>18</option><option value="20px">20</option><option value="24px">24</option>
+            </select>
+          </label>
+        </div>
+        <div class="compare-panes-wrap">
+        <div class="pane-stage-tabs" id="history-pane-stage-tabs" role="group" aria-label="Select text stage">
+          <button type="button" class="btn btn-small pane-stage-btn active" data-pane="raw">Raw OCR</button>
+          <button type="button" class="btn btn-small pane-stage-btn" data-pane="cleaned">Cleaned</button>
+          <button type="button" class="btn btn-small pane-stage-btn" data-pane="translated">Translated</button>
         </div>
         <div class="compare-panes">
           <div class="compare-pane" data-pane="raw">
@@ -340,7 +349,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page to compare its scan and text.</span></div>
           </div>
           <div class="compare-pane" data-pane="cleaned">
             <div class="compare-pane-head">
@@ -351,7 +360,7 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page to compare its scan and text.</span></div>
           </div>
           <div class="compare-pane" data-pane="translated">
             <div class="compare-pane-head">
@@ -362,8 +371,9 @@
                 <span class="compare-meta dim"></span>
               </span>
             </div>
-            <div class="compare-text"><span class="empty empty-no-selection">Select a page above to compare its stages.</span></div>
+            <div class="compare-text"><span class="empty empty-no-selection">Select a page to compare its scan and text.</span></div>
           </div>
+        </div>
         </div>
       </div>
     </section>

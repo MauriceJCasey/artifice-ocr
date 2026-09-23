@@ -138,7 +138,7 @@ def test_collect_files_empty_directory_raises(mock_get_client, tmp_path):
 
     try:
         _collect_files(str(empty_dir))
-        assert False, "Should have raised FileNotFoundError"
+        raise AssertionError("Should have raised FileNotFoundError")
     except FileNotFoundError as e:
         assert "No supported files" in str(e)
 

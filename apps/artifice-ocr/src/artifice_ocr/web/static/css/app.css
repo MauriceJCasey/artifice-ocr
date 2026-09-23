@@ -456,15 +456,13 @@ button.btn {
   font-weight: 600;
   font-size: var(--text-sm);
   cursor: pointer;
-  box-shadow: 3px 3px 0 var(--paper-recessed);
-  transition: background 0.3s ease, border-color 0.3s ease, transform 0.3s var(--ease-primary), box-shadow 0.3s var(--ease-primary);
+  transition: background 0.2s var(--ease-primary), border-color 0.2s var(--ease-primary), color 0.2s var(--ease-primary);
 }
 
 button.btn:hover:not(:disabled) { 
   background: var(--accent-wash); 
   border-color: var(--accent); 
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--accent);
+  transform: none;
 }
 button.btn:active:not(:disabled) { transform: translateY(1px); }
 
@@ -843,7 +841,7 @@ select.select, .output-row select, .run-row select, label select {
   overflow: auto;
   padding: 0.5rem 0.9rem 1rem;
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: var(--review-text-size, 1.125rem);
   line-height: 1.55;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -905,6 +903,8 @@ select.select, .output-row select, .run-row select, label select {
   grid-template-columns: minmax(320px, calc(var(--split-frac, 0.333) * 100%)) 8px 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas: "image handle bar" "image handle panes";
+  height: min(72vh, 54rem);
+  min-height: min(72vh, 54rem);
 }
 .compare-card--with-image .image-pane {
   grid-area: image;
@@ -929,6 +929,47 @@ select.select, .output-row select, .run-row select, label select {
   flex: 1;
   min-height: 0;
   overflow: auto;
+}
+
+/* The review workspace is one reading surface. Keep the selected stage as a
+   full-height editor below the stage tabs instead of leaving a short text
+   strip under a large image or reserving space for hidden stages. */
+.compare-card--with-image .compare-panes {
+  display: block;
+  overflow: hidden;
+}
+.compare-card--with-image .compare-pane {
+  height: 100%;
+  min-height: 0;
+  border-right: 0;
+  display: flex;
+  flex-direction: column;
+}
+.compare-card--with-image .compare-text {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 0.8rem 1.15rem 1.2rem;
+  /* .raw-edit (the editable <textarea> for the raw-OCR stage) is a flex
+     child of this element and relies on `flex: 1` to fill the available
+     height — without `display: flex` here that property has no effect on
+     a <textarea>, which falls back to its intrinsic ~2-row height instead
+     of filling the card. Read-only stages render plain paragraphs
+     directly inside this element instead of .raw-edit; flex-direction:
+     column keeps their block stacking unchanged. */
+  display: flex;
+  flex-direction: column;
+}
+.compare-card--with-image .raw-edit {
+  height: auto;
+  min-height: 0;
+  flex: 1;
+  padding: 0.8rem 1.15rem 1.2rem;
+}
+.compare-card--with-image .compare-pane-head {
+  flex: 0 0 auto;
+  padding-inline: 1.15rem;
 }
 
 /* ----------------------------------------------------------------- resize handle */
@@ -1076,10 +1117,31 @@ select.select, .output-row select, .run-row select, label select {
   background: transparent;
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: var(--review-text-size, 1.125rem);
   line-height: 1.55;
 }
 .raw-edit:focus { outline: none; background: var(--accent-wash); }
+
+.reading-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ink-faint);
+  font: 600 var(--text-xs)/1.2 var(--font-label);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.reading-size-control select {
+  min-height: 2rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper-recessed);
+  color: var(--ink);
+  font: inherit;
+  letter-spacing: 0;
+}
 
 /* ----------------------------------------------------------------- find bar */
 .find-bar {
@@ -1920,7 +1982,6 @@ tr.history-state-cancelled td { color: var(--ink-faint); }
 .tropy-send-dialog { width: min(36rem, calc(100vw - (2 * var(--space-6)))); }
 .tropy-dialog button.btn:hover:not(:disabled) {
   border-color: var(--rule);
-  box-shadow: 3px 3px 0 var(--paper-recessed);
   transform: none;
 }
 .tropy-dialog button.btn:disabled { cursor: not-allowed; }
@@ -2438,14 +2499,17 @@ table.queue tbody tr.dragging { opacity: 0.4; }
 @media (max-width: 900px) {
   .compare-card--with-image {
     grid-template-columns: 1fr;
-    grid-template-areas: "bar" "panes" "image";
+    grid-template-rows: minmax(30vh, 0.9fr) auto minmax(34vh, 1.1fr);
+    grid-template-areas: "image" "bar" "panes";
+    height: 78vh;
+    min-height: 78vh;
   }
   .compare-card--with-image .image-pane {
     border-right: none;
     border-top: 1px solid var(--rule);
-    min-height: 30vh;
+    min-height: 0;
   }
-  .image-viewport { min-height: 26vh; }
+  .image-viewport { min-height: 0; }
   /* No resize handle in single-column layout — there's no split to resize. */
   .compare-resize-handle { display: none; }
 

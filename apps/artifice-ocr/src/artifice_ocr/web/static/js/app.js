@@ -143,8 +143,8 @@ function renderAll() {
   els["queue-body"].innerHTML = "";
   if (items.size === 0) {
     const hint = isDesktop
-      ? "Use Browse Files to add documents."
-      : "Drop image files above, or use Browse Files to add documents.";
+      ? "Add files to begin."
+      : "Drop image files here, or choose files to browse.";
     const tr = document.createElement("tr");
     tr.innerHTML = `<td colspan="10" class="table-empty-cell">
       <p class="panel-empty-title">No documents queued</p>
@@ -161,7 +161,7 @@ function renderAll() {
 
 function updateLogEmptyState() {
   if (els["log"].children.length === 0) {
-    els["log"].innerHTML = '<p class="log-empty">Activity will appear here as the pipeline runs.</p>';
+    els["log"].innerHTML = '<p class="log-empty">Progress and recoverable errors appear here while work is running.</p>';
   }
 }
 
@@ -340,28 +340,6 @@ async function refreshQueue() {
   setQueue(data.items);
   applyRunStatus(data.status);
 }
-
-function setWorkflowStep(step) {
-  document.querySelectorAll(".workflow-rail [data-workflow-step]").forEach(item => {
-    const active = Number(item.dataset.workflowStep) === Number(step);
-    item.classList.toggle("active", active);
-    if (active) item.setAttribute("aria-current", "step");
-    else item.removeAttribute("aria-current");
-  });
-}
-
-function workflowStepForTab(tabName) {
-  if (tabName === "preview" || tabName === "history") return 3;
-  return running ? 2 : 1;
-}
-
-window.setWorkflowStep = setWorkflowStep;
-window.workflowStepForTab = workflowStepForTab;
-
-// Call sites moved out with their owning concerns: events.js calls
-// setWorkflowStep(workflowStepForTab(tab.dataset.tab)) on tab navigation, and
-// both events.js and run_control.js call setWorkflowStep(2) when a run starts.
-// Kept here (and on window) so one file owns the name and tropy.js can reach it.
 
 // Tropy (both "Add from…" and "Send to…") lives in tropy.js, loaded after
 // this file — it reuses api(), escapeHtml(), pickFolder(), setQueue() and log()

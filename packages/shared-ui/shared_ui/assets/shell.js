@@ -29,20 +29,27 @@
     list.innerHTML = Array.from(activities.values()).map((item) => `<div class="activity-item" data-state="${item.state}"><span>${item.label}</span><div class="activity-progress" aria-label="${item.progress || 0}% complete"><span style="width:${Math.max(0,Math.min(100,item.progress || 0))}%"></span></div><small>${item.detail || item.state}</small></div>`).join("");
     const count = $("[data-activity-count]"); if (count) count.textContent = String(activities.size);
   }
-  function publishActivity(item) { if (!item || !item.id || !item.label || !item.state) throw new TypeError("Activity requires id, label, and state"); activities.set(item.id, item); renderActivities(); }
+  function publishActivity(item) { if (!item || !item.id || !item.label || !item.state) throw new TypeError("Activity requires id, label, and state"); activities.set(item.id, item); renderActivities(); const list = $("[data-activity-list]"); const heading = $("[data-shell-action=activity]"); if (list && root.dataset.shellVariant === "research") { list.hidden = false; if (heading) heading.setAttribute("aria-expanded", "true"); } }
   function removeActivity(id) { activities.delete(id); renderActivities(); }
   function setModelStatus(status) { const label=$("[data-model-label]"); const dot=$(".status-dot"); if(label) label.textContent=status.label; if(dot) dot.dataset.state=status.state; }
   function syncNavigation() {
     const current = new URL(window.location.href);
     const currentView = current.searchParams.get("view");
     if (!currentView) return;
-    document.querySelectorAll(".shell-nav a").forEach((link) => {
+    document.querySelectorAll(".shell-nav a, .shell-titlebar-nav a").forEach((link) => {
       const target = new URL(link.href, current);
       const samePath = target.pathname === current.pathname;
       const targetView = target.searchParams.get("view");
       const selected = samePath && (targetView ? targetView === currentView : !currentView);
       if (selected) link.setAttribute("aria-current", "page");
       else link.removeAttribute("aria-current");
+    });
+  }
+  function quarantineLegacyTabs() {
+    if (root.dataset.shellVariant !== "research") return;
+    document.querySelectorAll(".tabs .tab").forEach((tab) => {
+      tab.setAttribute("tabindex", "-1");
+      tab.setAttribute("aria-hidden", "true");
     });
   }
   async function refreshSuiteApps() {
@@ -53,6 +60,7 @@
   function init() {
     getPreferences();
     syncNavigation();
+    quarantineLegacyTabs();
     document.addEventListener("click", async (event) => { const action=event.target.closest("[data-shell-action]")?.dataset.shellAction; if(action==="nav"){const nav=$("[data-shell-panel=nav]");nav.toggleAttribute("data-open");event.target.setAttribute("aria-expanded",String(nav.hasAttribute("data-open")));} if(action==="suite"){const pop=$("[data-suite-popover]");pop.hidden=!pop.hidden;event.target.setAttribute("aria-expanded",String(!pop.hidden));if(!pop.hidden) await refreshSuiteApps();} if(action==="theme"){const order=["system","light","dark"];const current=root.dataset.theme||"system";setPreferences({theme:order[(order.indexOf(current)+1)%order.length]});} if(action==="activity"){const list=$("[data-activity-list]");list.hidden=!list.hidden;event.target.setAttribute("aria-expanded",String(!list.hidden));} });
   }
   window.ArtificeShell={init,publishActivity,removeActivity,setModelStatus,getPreferences,setPreferences,refreshSuiteApps};
