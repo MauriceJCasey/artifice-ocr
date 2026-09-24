@@ -71,7 +71,9 @@ function clearCompare(container) {
   // markup — no restructuring of the fragile compare-card grid — while
   // showing that one message once, not three times.
   container.classList.add("compare-empty");
-  container.querySelector(".compare-title").textContent = "Select a page to compare its scan and text.";
+  const heading = container.querySelector(".compare-title");
+  heading.textContent = "Select a page to compare its scan and text.";
+  heading.hidden = false;
   container.querySelector(".compare-conf").textContent = "";
   // "empty-no-selection" (not renderCompare()'s plain "empty") lets the CSS
   // tell this apart from a genuinely selected item whose stage just hasn't

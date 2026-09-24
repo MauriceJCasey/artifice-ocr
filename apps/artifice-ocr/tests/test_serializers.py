@@ -25,6 +25,15 @@ def test_serialize_item_exposes_skip_reason_and_key():
     assert data["stages"]["ocr"]["skip_key"] == "Item/page1"
 
 
+def test_serialize_item_preview_carries_tropy_item_title():
+    # The Review heading shows this instead of repeating the filename that the
+    # page picker beside it already displays.
+    item = JobItem(path="a.png", source={"item_title": "Letter to J. Freeman"})
+
+    assert serialize_item_preview(item)["item_title"] == "Letter to J. Freeman"
+    assert serialize_item_preview(JobItem(path="b.png"))["item_title"] == ""
+
+
 def test_serialize_item_skip_fields_default_empty():
     item = JobItem(path="a.png")
 

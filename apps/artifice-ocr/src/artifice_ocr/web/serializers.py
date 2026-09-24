@@ -84,6 +84,7 @@ def serialize_item_preview(item: JobItem) -> dict[str, Any]:
     return {
         "id": _item_key(item),
         "title": item.name,
+        "item_title": (item.source or {}).get("item_title") or "",
         "path": item.path,
         "raw": raw,
         "original_raw": (results.get("raw") or {}).get("original_extracted_text", "") or "",

@@ -85,6 +85,19 @@ const PreviewTab = (function () {
   // Not autosaved on every keystroke — a scan-correction session is a
   // deliberate, occasional action, not a live-typing document, so saving
   // only happens on the button click or Ctrl+S.
+  // Every Review re-render goes through here. The page picker already names
+  // the file, so the heading carries the Tropy item title instead, or steps
+  // aside when there isn't one.
+  function renderItem(data) {
+    renderCompare(container, data, { editableStages: new Set(["raw", "cleaned", "translated"]) });
+    const heading = container.querySelector(".compare-title");
+    heading.textContent = data.item_title || "";
+    heading.hidden = !data.item_title;
+    wireAllPanes();
+    wireOriginalToggles(container);
+    wireCrossHighlight(container);
+  }
+
   async function savePaneText(key) {
     const textarea = getPaneTextarea(key);
     const btn = paneConfigs[key].btn;
@@ -94,10 +107,7 @@ const PreviewTab = (function () {
     btn.textContent = "Saving…";
     try {
       const data = await api("POST", paneConfigs[key].endpoint(currentItemId), { text: textarea.value });
-      renderCompare(container, data, { editableStages: new Set(["raw", "cleaned", "translated"]) });
-      wireAllPanes();
-      wireOriginalToggles(container);
-      wireCrossHighlight(container);
+      renderItem(data);
       log(`${key.charAt(0).toUpperCase() + key.slice(1)} text corrected and saved.`, "accent");
     } catch (err) {
       log(`Could not save correction: ${err.message}`, "error");
@@ -116,10 +126,7 @@ const PreviewTab = (function () {
       const data = await api("POST", `/api/queue/${currentItemId}/reprocess`, {
         from_stage: "raw", stages: ["cleanup", "translate"],
       });
-      renderCompare(container, data, { editableStages: new Set(["raw", "cleaned", "translated"]) });
-      wireAllPanes();
-      wireOriginalToggles(container);
-      wireCrossHighlight(container);
+      renderItem(data);
       log("Re-processing complete.", "accent");
     } catch (err) {
       log(`Re-processing failed: ${err.message}`, "error");
@@ -169,10 +176,7 @@ const PreviewTab = (function () {
     try {
       const data = await api("GET", `/api/queue/${id}/preview`);
       if (request !== openRequest) return;
-      renderCompare(container, data, { editableStages: new Set(["raw", "cleaned", "translated"]) });
-      wireAllPanes();
-      wireOriginalToggles(container);
-      wireCrossHighlight(container);
+      renderItem(data);
       setPaneTab("raw");
       if (btnReprocess) btnReprocess.disabled = !data.raw;
       if (fabricatedToggle) {
@@ -182,7 +186,9 @@ const PreviewTab = (function () {
     } catch (err) {
       if (request !== openRequest) return;
       clearCompare(container);
-      container.querySelector(".compare-title").textContent = `Could not load: ${err.message}`;
+      const heading = container.querySelector(".compare-title");
+      heading.textContent = `Could not load: ${err.message}`;
+      heading.hidden = false;
       if (btnSaveRaw) btnSaveRaw.disabled = true;
       if (btnSaveCleaned) btnSaveCleaned.disabled = true;
       if (btnSaveTranslated) btnSaveTranslated.disabled = true;
