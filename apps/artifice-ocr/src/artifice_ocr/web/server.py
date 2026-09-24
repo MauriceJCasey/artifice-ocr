@@ -43,6 +43,7 @@ from .routers import queue as queue_router
 from .routers import run as run_router
 from .routers import segmentation as segmentation_router
 from .routers import settings as settings_router
+from .routers import suite as suite_router
 from .routers import tropy_browse as tropy_browse_router
 from .routers import tropy_notes as tropy_notes_router
 from .runtime import PdfExportState, RunState
@@ -515,6 +516,7 @@ def create_app(
     new_app.include_router(tropy_browse_router.router)
     new_app.include_router(tropy_notes_router.router)
     new_app.include_router(pdf_export_router.router)
+    new_app.include_router(suite_router.router)
     new_app.include_router(_core_router)
 
     new_app.mount("/shared", StaticFiles(directory=str(_SHARED_UI)), name="shared")

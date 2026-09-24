@@ -17,6 +17,10 @@
 {% block activity %}<p class="activity-empty">Progress and recoverable errors appear here while work is running.</p>{% endblock %}
 
 {% block scripts %}
+{#- Workspace scripts bind to the Source/Review/History/Settings markup in
+    index.html. A page without that markup (About) overrides this block, or
+    every one of them throws on load. -#}
+{% block page_scripts %}
 <script src="/static/js/icons.js?v={{ asset_v }}"></script>
 <script src="/static/js/app.js?v={{ asset_v }}"></script>
 <script src="/static/js/intake.js?v={{ asset_v }}"></script>
@@ -42,6 +46,7 @@
 <script src="/static/js/history.js?v={{ asset_v }}"></script>
 <script src="/static/js/reading_size.js?v={{ asset_v }}"></script>
 <script src="/static/js/settings.js?v={{ asset_v }}"></script>
+{% endblock %}
 <script src="/shared/byom.js?v={{ asset_v }}"></script>
 <script>
 (function () {

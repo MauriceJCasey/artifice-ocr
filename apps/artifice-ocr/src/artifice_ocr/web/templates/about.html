@@ -6,8 +6,11 @@
 {% extends "base.html" %}
 {% block title %}ArtificeOCR — About{% endblock %}
 
+{# Static page: none of the workspace scripts have anything to bind to here. #}
+{% block page_scripts %}{% endblock %}
+
 {% block content %}
-<main class="page page-prose" id="main-content">
+<article class="page page-prose" id="main-content">
   <header class="masthead">
     <span class="label">Local-first · offline OCR, cleanup &amp; translation</span>
     <h1>About ArtificeOCR</h1>
@@ -27,9 +30,11 @@
       <span>GitHub</span>
     </a>
     <a class="about-link" href="https://mauricejcasey.com" rel="noopener noreferrer">
-      <img class="about-link-mark" src="https://mauricejcasey.com/favicon.ico" alt="">
+      {#- Drawn inline, not the site's favicon: a local-first app shouldn't
+          contact another server just because someone opened About. -#}
+      <svg class="about-link-mark" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9.25"/><path d="M2.75 12h18.5M12 2.75c2.6 2.6 3.9 5.7 3.9 9.25s-1.3 6.65-3.9 9.25M12 2.75C9.4 5.35 8.1 8.45 8.1 12s1.3 6.65 3.9 9.25"/></svg>
       <span>mauricejcasey.com</span>
     </a>
   </nav>
-</main>
+</article>
 {% endblock %}

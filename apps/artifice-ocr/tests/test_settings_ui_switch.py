@@ -23,9 +23,7 @@ _SETTINGS_JS = (
 )
 
 
-@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
-def test_switching_all_roles_from_ollama_to_lm_studio_changes_row_and_payload():
-    harness = r"""
+_HARNESS = r"""
 class FakeElement {
   constructor(id) {
     this.id = id;
@@ -85,16 +83,32 @@ const calls = [];
 globalThis.api = async (method, path, body) => {
   calls.push({ method, path, body });
   if (path === "/api/config" && method === "GET") return fields;
+  if (path === "/api/document-types") return { types: { default: "General documents" } };
   if (path === "/api/tesseract/status") return { available: false };
   if (path.startsWith("/api/local-models")) {
     const backend = new URL(path, "http://artifice.test").searchParams.get("backend");
     return backend === "lm_studio"
-      ? { ok: true, backend, url: fields.lm_studio_url, models: ["vision-live", "text-live"] }
+      ? { ok: true, backend, url: globalThis.discoveredLmUrl || fields.lm_studio_url,
+          models: ["vision-live", "text-live"] }
       : { ok: true, backend, url: fields.ollama_url, models: ["ollama-live"] };
   }
   return { ok: true };
 };
 """
+
+
+def _run_settings_js(assertions: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["node", "-e", _HARNESS + _SETTINGS_JS.read_text(encoding="utf-8") + assertions],
+        capture_output=True,
+        text=True,
+        timeout=15,
+        check=False,
+    )
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_switching_all_roles_from_ollama_to_lm_studio_changes_row_and_payload():
     assertions = r"""
 (async () => {
   for (const key of ["ocr_backend", "cleanup_backend", "translate_backend"]) {
@@ -129,12 +143,54 @@ globalThis.api = async (method, path, body) => {
   console.log("settings-switch-ok");
 })().catch((error) => { console.error(error.stack); process.exit(1); });
 """
-    proc = subprocess.run(
-        ["node", "-e", harness + _SETTINGS_JS.read_text(encoding="utf-8") + assertions],
-        capture_output=True,
-        text=True,
-        timeout=15,
-        check=False,
-    )
+    proc = _run_settings_js(assertions)
     assert proc.returncode == 0, proc.stderr
     assert "settings-switch-ok" in proc.stdout
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_undoing_an_edit_returns_settings_to_no_changes():
+    # The dirty baseline was the raw config, a different shape from the form
+    # values it was compared with, so once anything fired a change event the
+    # page stayed "Unsaved changes" (and prompted on leave) even after undoing.
+    proc = _run_settings_js(r"""
+(async () => {
+  const status = element("settings-saved");
+  const expect = (want, when) => {
+    if (status.textContent !== want) throw new Error(when + ": " + status.textContent);
+  };
+  await SettingsTab.load();
+  expect("No changes", "after load");
+  element("set-max_ocr_workers").value = "5";
+  element("set-max_ocr_workers").dispatch("input");
+  expect("Unsaved changes", "after edit");
+  element("set-max_ocr_workers").value = "2";
+  element("set-max_ocr_workers").dispatch("input");
+  expect("No changes", "after undo");
+  console.log("settings-dirty-ok");
+})().catch((error) => { console.error(error.stack); process.exit(1); });
+""")
+    assert proc.returncode == 0, proc.stderr
+    assert "settings-dirty-ok" in proc.stdout
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node.js is not installed")
+def test_a_newly_discovered_address_says_why_settings_need_saving():
+    proc = _run_settings_js(r"""
+(async () => {
+  await SettingsTab.load();
+  // Guard: a failed load leaves no baseline, which would also look dirty.
+  const loaded = element("settings-saved").textContent;
+  if (loaded !== "No changes") throw new Error("load failed: " + loaded);
+  globalThis.discoveredLmUrl = "http://172.21.176.1:1234/v1";
+  await element("btn-refresh-models").onclick();
+  const status = element("settings-saved").textContent;
+  if (!status.startsWith("Found LM Studio at a new address")) throw new Error("status: " + status);
+  if (element("set-lm_studio_url").value !== globalThis.discoveredLmUrl) {
+    throw new Error("discovered address not shown");
+  }
+  console.log("settings-discovery-ok");
+})().catch((error) => { console.error(error.stack); process.exit(1); });
+""")
+    assert proc.returncode == 0, proc.stderr
+    assert "settings-discovery-ok" in proc.stdout

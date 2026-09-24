@@ -31,6 +31,18 @@ def test_about_page_serves(client):
     assert "app-shell" in res.text
 
 
+def test_about_page_is_clean(client):
+    html = client.get("/about").text
+    # Workspace scripts threw 11 uncaught exceptions here: nothing to bind to.
+    assert "/static/js/intake.js" not in html
+    assert "/static/js/settings.js" not in html
+    # The connection dialog still works from the titlebar.
+    assert "/shared/byom.js" in html
+    # One main landmark (the shell's), and no request to another server.
+    assert html.count("<main") == 1
+    assert "mauricejcasey.com/favicon" not in html
+
+
 # --------------------------------------------------------------------------- #
 # CORS origins (ARTIFICE_OCR_CORS_ORIGINS)
 # --------------------------------------------------------------------------- #

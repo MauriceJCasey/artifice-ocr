@@ -219,6 +219,7 @@ const SettingsTab = (function () {
     if (generation !== discoveryGeneration) return;
 
     const summaries = [];
+    const moved = [];
     for (const result of results) {
       discoveredModels.set(result.backend, result.ok ? result.models || [] : []);
       if (result.ok) {
@@ -226,6 +227,7 @@ const SettingsTab = (function () {
         const urlInput = el(urlKey);
         if (urlInput && result.url && urlInput.value !== result.url) {
           urlInput.value = result.url;
+          moved.push(result.backend === "ollama" ? "Ollama" : "LM Studio");
           markChanged();
         }
         summaries.push(`${result.backend === "ollama" ? "Ollama" : "LM Studio"}: ${(result.models || []).length} model${(result.models || []).length === 1 ? "" : "s"}`);
@@ -236,6 +238,11 @@ const SettingsTab = (function () {
     renderDiscoveredModelList();
     renderModelControls();
     if (localModelStatus) localModelStatus.textContent = summaries.join(" · ");
+    // Runs use the saved address, so a newly found one is a real pending
+    // change, but the person didn't make it: say why the page needs saving.
+    if (moved.length && dirty && !settingsBusy) {
+      setStatus(`Found ${moved.join(" and ")} at a new address. Save to use it.`, "warning");
+    }
   }
 
   // Report whether the Tesseract binary is actually detected. A control that
@@ -280,8 +287,8 @@ const SettingsTab = (function () {
       tone === "success" ? "var(--accent)" : "";
   }
 
-  function snapshot(values) {
-    return JSON.stringify(values || collect());
+  function snapshot() {
+    return JSON.stringify(collect());
   }
 
   function setDirty(value) {
@@ -420,7 +427,10 @@ const SettingsTab = (function () {
         return;
       }
       apply(cfg);
-      savedSnapshot = snapshot(cfg);
+      // Baseline the form as displayed, not the raw config: markChanged()
+      // compares against collect(), a different shape, so a config baseline
+      // never matched and the first change event left the page dirty for good.
+      savedSnapshot = snapshot();
       setDirty(false);
     } catch (err) {
       setStatus("Could not load settings: " + err.message, "error");
@@ -444,7 +454,7 @@ const SettingsTab = (function () {
       await api("POST", "/api/config", collect());
       const cfg = await api("GET", "/api/config");
       apply(cfg);
-      savedSnapshot = snapshot(cfg);
+      savedSnapshot = snapshot();
       setDirty(false);
       setStatus("Saved.", "success");
       // Cancel any revert timer still pending from an earlier save, or the
@@ -467,7 +477,7 @@ const SettingsTab = (function () {
     try {
       const cfg = await api("POST", "/api/config/reset");
       apply(cfg);
-      setDirty(snapshot(cfg) !== savedSnapshot);
+      setDirty(snapshot() !== savedSnapshot);
       setStatus("Defaults loaded. Save to keep them.", "warning");
     } catch (err) {
       if (window.ArtificeToast) window.ArtificeToast.error("Could not reset settings: " + err.message);

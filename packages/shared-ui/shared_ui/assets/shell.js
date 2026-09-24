@@ -62,6 +62,19 @@
     syncNavigation();
     quarantineLegacyTabs();
     document.addEventListener("click", async (event) => { const action=event.target.closest("[data-shell-action]")?.dataset.shellAction; if(action==="nav"){const nav=$("[data-shell-panel=nav]");nav.toggleAttribute("data-open");event.target.setAttribute("aria-expanded",String(nav.hasAttribute("data-open")));} if(action==="suite"){const pop=$("[data-suite-popover]");pop.hidden=!pop.hidden;event.target.setAttribute("aria-expanded",String(!pop.hidden));if(!pop.hidden) await refreshSuiteApps();} if(action==="theme"){const order=["system","light","dark"];const current=root.dataset.theme||"system";setPreferences({theme:order[(order.indexOf(current)+1)%order.length]});} if(action==="activity"){const list=$("[data-activity-list]");list.hidden=!list.hidden;event.target.setAttribute("aria-expanded",String(!list.hidden));} });
+    // The app switcher only toggled on its own button: Escape and a click
+    // elsewhere left it open over the page.
+    function closeSuite(restoreFocus) {
+      const pop = $("[data-suite-popover]");
+      if (!pop || pop.hidden) return;
+      pop.hidden = true;
+      const trigger = $("[data-shell-action=suite]");
+      if (trigger) { trigger.setAttribute("aria-expanded", "false"); if (restoreFocus) trigger.focus(); }
+    }
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeSuite(true); });
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-suite-popover], [data-shell-action=suite]")) closeSuite(false);
+    });
   }
   window.ArtificeShell={init,publishActivity,removeActivity,setModelStatus,getPreferences,setPreferences,refreshSuiteApps};
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
