@@ -48,7 +48,36 @@ Each stage runs against your own model server: Ollama, LM Studio, or anything Op
   <img src="docs/images/artifice-ocr-workflow.gif" width="880" alt="Artifice OCR workflow: a processed page in the queue, its scan beside the raw OCR, cleaned and translated text, then an OCR error corrected and saved">
 </p>
 
-## Getting started
+## Download
+
+Windows and Linux builds are attached to each
+[release](https://github.com/MauriceJCasey/artifice-ocr/releases/latest). They are not code-signed
+yet, and you still need a model server of your own (Ollama, LM Studio or anything
+OpenAI-compatible).
+
+**Windows 10 or 11**
+
+1. Download `artifice-ocr-Windows-*.zip`, right-click it and choose **Extract All**. Keep the
+   extracted folder together: the app needs the files beside it.
+2. Open `artifice-ocr.exe`. Windows SmartScreen will say it "protected your PC" because the build
+   is unsigned: choose **More info**, then **Run anyway**.
+3. The app opens in its own window, and closing the window quits it.
+
+**Linux (x86-64)**
+
+```bash
+mkdir artifice-ocr && tar -xzf artifice-ocr-Linux-*.tar.gz -C artifice-ocr
+cd artifice-ocr && ./artifice-ocr --no-window
+```
+
+Then open `http://localhost:8765` in your browser, and press Ctrl+C in the terminal to stop it.
+The `--no-window` flag is needed because a portable Linux build cannot bundle the system GTK
+libraries that a native window uses.
+
+**macOS** has no download yet: macOS will not open an unsigned app without extra steps, so use the
+source install below.
+
+## Run from source
 
 ```bash
 uv sync --extra web

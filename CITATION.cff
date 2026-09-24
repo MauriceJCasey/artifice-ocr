@@ -19,7 +19,7 @@ repository-code: "https://github.com/MauriceJCasey/artifice-ocr"
 url: "https://www.mauricejcasey.com/tools"
 license: AGPL-3.0-or-later
 version: 0.6.0
-date-released: "2026-09-23"
+date-released: "2026-09-24"
 keywords:
   - digital humanities
   - optical character recognition
