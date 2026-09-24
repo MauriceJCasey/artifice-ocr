@@ -71,7 +71,7 @@ jobs:
           curl -s http://127.0.0.1:18999/ | grep -q app-shell \
             && echo "  shared app shell rendered: yes" \
             || { echo "  shared app shell MISSING"; fail=1; }
-          curl -s http://127.0.0.1:18999/ | grep -q "Tropy round trip" \
+          curl -s http://127.0.0.1:18999/ | grep -q "Choose Tropy pages" \
             && echo "  Tropy-first workspace rendered: yes" \
             || { echo "  Tropy-first workspace MISSING"; fail=1; }
           pkill -f "dist/artifice-ocr" || true
@@ -110,7 +110,7 @@ jobs:
             $body = (Invoke-WebRequest -Uri "http://127.0.0.1:18999/" -UseBasicParsing -TimeoutSec 15).Content
             if ($body -match "app-shell") { Write-Host "  shared app shell rendered: yes" }
             else { Write-Host "  shared app shell MISSING"; $fail = 1 }
-            if ($body -match "Tropy round trip") { Write-Host "  Tropy-first workspace rendered: yes" }
+            if ($body -match "Choose Tropy pages") { Write-Host "  Tropy-first workspace rendered: yes" }
             else { Write-Host "  Tropy-first workspace MISSING"; $fail = 1 }
           } catch { Write-Host "  index fetch FAILED"; $fail = 1 }
           Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
