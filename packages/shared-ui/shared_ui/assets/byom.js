@@ -1305,6 +1305,9 @@
           ? "Connection configured."
           : "Set up connection"
       );
+      // On narrow windows the visible label collapses to the dot, so the
+      // tooltip is what tells a mouse user what it means.
+      btn.setAttribute("title", configured ? "Connection configured" : "Set up connection");
       var label = btn.querySelector("[data-model-label]");
       if (label) label.textContent = configured ? "Connection configured" : "Set up connection";
       var dot = btn.querySelector(".status-dot");
