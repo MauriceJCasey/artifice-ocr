@@ -9,6 +9,7 @@
   <a href="https://api.reuse.software/info/github.com/MauriceJCasey/artifice-ocr"><img src="https://api.reuse.software/badge/github.com/MauriceJCasey/artifice-ocr" alt="REUSE status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0--or--later-blue.svg" alt="License"></a>
   <img src="https://img.shields.io/badge/version-0.6.0-informational" alt="Version 0.6.0">
+  <a href="https://doi.org/10.5281/zenodo.22943800"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22943800.svg" alt="DOI"></a>
 </p>
 
 A local-first OCR pipeline for historical documents that integrates with
