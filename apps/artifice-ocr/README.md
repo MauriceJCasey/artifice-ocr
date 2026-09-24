@@ -1,4 +1,4 @@
-# ArtificeOCR
+# Artifice OCR
 
 **Local-First Archival OCR, Preservation Cleanup & Translation for Historical Research**
 
@@ -8,10 +8,10 @@
 
 ## 🏛️ Philosophy: The Software Harness vs. The Chatbot
 
-ArtificeOCR is a local-first pipeline built specifically for processing, cleaning, structuring, translating, and publishing historical documents—engineered for archival research, not demos. It operates around Joseph Weizenbaum’s anti-ELIZA principle: **software should perform deterministic computing tasks, and AI models should be invoked strictly as guarded text transformation engines.**
+Artifice OCR is a local-first pipeline built specifically for processing, cleaning, structuring, translating, and publishing historical documents—engineered for archival research, not demos. It operates around Joseph Weizenbaum’s anti-ELIZA principle: **software should perform deterministic computing tasks, and AI models should be invoked strictly as guarded text transformation engines.**
 
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                          ArtificeOCR Harness                               │
+│                          Artifice OCR Harness                              │
 │                                                                            │
 │   1. Vision OCR Extraction (olmocr-2-7b via LM Studio)                     │
 │   2. Guarded Text Cleanup (Gemma 4 via Ollama - Capitalisation/Umlaut Guard)│
@@ -21,7 +21,7 @@ ArtificeOCR is a local-first pipeline built specifically for processing, cleanin
 │   6. Multi-Format Export (PDF / Markdown / Tropy Writeback)                │
 └────────────────────────────────────────────────────────────────────────────┘
 
-1. **Deterministic Execution, No Conversational Noise:** ArtificeOCR never "chats" about documents. It processes images or archival manifests through a strict multi-stage pipeline and outputs structured JSON, Markdown, or PDF assets.
+1. **Deterministic Execution, No Conversational Noise:** Artifice OCR never "chats" about documents. It processes images or archival manifests through a strict multi-stage pipeline and outputs structured JSON, Markdown, or PDF assets.
 2. **Preservation Over Prettiness (The Guard System):** Historical texts—especially fragmentary 1920s–1940s German archival records—contain fragile spellings, capitalized nouns, and OCR artifacts. The cleanup and structuring stages are strictly *guarded*. If a model attempts to alter valid words, capitalized German nouns, or delete text beyond tight thresholds, the modification is rejected and saved as `rejected_*` for review—nothing is silently lost or rewritten.
 3. **Local-First & Archival Privacy:** All vision and language models run locally on your GPU via **LM Studio** and **Ollama**. Confidential archival findings and copyright-restricted manuscript photos never leave your hardware.
 4. **Editorial Visual Identity:** Built using **The New Masses Design System** (`packages/shared-ui`)—a warm, paper-and-ink interface inspired by 1930s radical editorial design and Soviet Constructivism.
@@ -39,7 +39,7 @@ Runs entirely on local GPU hardware with complete JSON metadata outputs (prompts
 * **Stage 5 — Historical Translation:** Optional translation (e.g., German to English) using a multilingual model such as `aya-expanse:8b` via Ollama.
 
 ### 2. Deep Tropy Archive Integration
-Connects to [Tropy](https://tropy.org) historical research archives via a **JSON-LD file bridge** — export from Tropy, import into ArtificeOCR, process, export back:
+Connects to [Tropy](https://tropy.org) historical research archives via a **JSON-LD file bridge** — export from Tropy, import into Artifice OCR, process, export back:
 * **Import Preview:** `tropy-import` scans a Tropy JSON-LD export and surfaces groups (`@type: Collection`), items, and photo paths before any file is touched. Path validation (`_tropy_pathcheck`) rejects entries whose absolute paths fall outside the configured allow-list root.
 * **Import Add:** Selected items are imported as pipeline-eligible job items with full provenance (`origin: "tropy-jsonld"`, `tropy_group`, `tropy_item_id`), mirroring Tropy's item/page structure on disk.
 * **Export & Export History:** `tropy-export` writes processed OCR text (structured, cleaned, or translated) into a new JSON-LD envelope as Tropy notes. `tropy-export-history` exports only items that already exist in the local run history, enabling incremental re-export.
@@ -80,7 +80,7 @@ Graph `data/output` folders remain readable and are never moved automatically.
 
 ## 🎨 Design System (`packages/shared-ui`)
 
-All visual interfaces in ArtificeOCR adhere to **The New Masses Design System**:
+All visual interfaces in Artifice OCR adhere to **The New Masses Design System**:
 * **Palette:** Warm cream paper (`#f6f3ea`), deep warm black ink (`#1b1813`), Esperanto green accents (`#2f7d45`), and antique gold highlights (`#bf9b30`).
 * **Typography:** Playfair Display (Display/Headings), Libre Baskerville (Body/Manuscripts), and Archivo (UI Labels/Buttons).
 * **Surface Depth & Motion:** Paper-like diffused shadows (`shadow-paper`), card lifts (4px), rule draw-in animations, and tactile button presses.
@@ -89,7 +89,7 @@ All visual interfaces in ArtificeOCR adhere to **The New Masses Design System**:
 
 ## 📂 Monorepo Architecture
 
-ArtificeOCR is located at `apps/artifice-ocr` within the Artifice Suite monorepo and shares core dependencies with partner applications:
+Artifice OCR is located at `apps/artifice-ocr` within the Artifice Suite monorepo and shares core dependencies with partner applications:
 
 ```
 artifice-suite/

@@ -217,7 +217,7 @@ if [ "$is_wsl" = true ] || [ "$os_type" = "Linux" ]; then
     cat > "$desktop_dir/artifice-ocr.desktop" << DESKTOP_EOF
 [Desktop Entry]
 Type=Application
-Name=ArtificeOCR
+Name=Artifice OCR
 Comment=Local-first OCR for historical documents
 Exec=$entry_point
 Terminal=true
@@ -258,7 +258,9 @@ DESKTOP_EOF
 
 elif [ "$os_type" = "Darwin" ]; then
 
-    command_path="$HOME/Desktop/ArtificeOCR.command"
+    command_path="$HOME/Desktop/Artifice OCR.command"
+    # Earlier installs named it ArtificeOCR.command; don't leave two shortcuts.
+    rm -f "$HOME/Desktop/ArtificeOCR.command"
 
     cat > "$command_path" << COMMAND_EOF
 #!/usr/bin/env bash
@@ -267,7 +269,7 @@ COMMAND_EOF
 
     chmod +x "$command_path"
     info "Created: $command_path"
-    info "  Double-click it in Finder to launch ArtificeOCR."
+    info "  Double-click it in Finder to launch Artifice OCR."
 
 fi
 

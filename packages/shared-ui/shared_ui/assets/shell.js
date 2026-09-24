@@ -54,7 +54,23 @@
   }
   async function refreshSuiteApps() {
     let apps=[]; try { const response=await fetch("/api/suite/apps"); if(response.ok) apps=await response.json(); } catch (_) { /* popover retains an empty state */ }
-    const host=$("[data-suite-apps]"); if(host) host.innerHTML=apps.length ? apps.map((app)=>`<a class="suite-app" href="${app.url || "/?manage="+encodeURIComponent(app.slug)}"><span class="suite-app-dot" style="background:${app.accent}"></span>${app.name}<small>${app.running ? "Running" : "Open in Hub"}</small></a>`).join("") : '<p class="suite-empty">Suite status is unavailable.</p>';
+    const host=$("[data-suite-apps]");
+    if (host) {
+      // data-app is "artifice-ocr" for some apps and "transcribe"/"graph" for others.
+      const here = root.dataset.app || "";
+      const inHub = here === "artifice-hub";
+      host.innerHTML = apps.length ? apps.map((app) => {
+        const dot = `<span class="suite-app-dot" style="background:${app.accent}"></span>`;
+        if (app.slug === here || app.slug === "artifice-" + here) {
+          return `<span class="suite-app" aria-current="page">${dot}${app.name}<small>Current</small></span>`;
+        }
+        if (app.running) return `<a class="suite-app" href="${app.url}">${dot}${app.name}<small>Running</small></a>`;
+        // Only the Hub understands ?manage=; anywhere else that link just
+        // reloaded the current app, so a stopped app isn't a link there.
+        if (inHub) return `<a class="suite-app" href="/?manage=${encodeURIComponent(app.slug)}">${dot}${app.name}</a>`;
+        return `<span class="suite-app suite-app-idle">${dot}${app.name}<small>Not running</small></span>`;
+      }).join("") : '<p class="suite-empty">Suite status is unavailable.</p>';
+    }
     return apps;
   }
   function init() {

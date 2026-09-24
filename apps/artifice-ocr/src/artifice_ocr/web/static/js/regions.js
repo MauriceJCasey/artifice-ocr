@@ -459,20 +459,11 @@ const RegionReview = (function () {
 
   async function load(itemId) {
     _currentItemId = itemId;
-    try {
-      const data = await api("GET", `/api/queue/${itemId}/regions`);
-      _currentRegions = data.regions || [];
-      _currentRegionIds = data.reading_order || _currentRegions.map(r => r.id);
-    } catch (err) {
-      // 404: no PAGE document for this item — segmentation was never enabled
-      // or OCR hasn't run. Treat as "no regions" rather than an error.
-      if (err.message && err.message.includes("404")) {
-        _currentRegions = [];
-        _currentRegionIds = [];
-      } else {
-        throw err;
-      }
-    }
+    // An item with no PAGE document (no segmentation) comes back as an empty
+    // list; any error that reaches here is a real one for the caller.
+    const data = await api("GET", `/api/queue/${itemId}/regions`);
+    _currentRegions = data.regions || [];
+    _currentRegionIds = data.reading_order || _currentRegions.map(r => r.id);
     return {
       regions: _currentRegions,
       regionIds: _currentRegionIds,

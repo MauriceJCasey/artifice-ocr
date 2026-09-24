@@ -4,7 +4,6 @@
   -->
 
 {% extends "base.html" %}
-{% block title %}ArtificeOCR{% endblock %}
 
 {% block content %}
 
@@ -192,7 +191,7 @@
           <select id="preview-item-select" class="select"></select>
           <span class="compare-conf dim"></span>
           <label class="fabricated-toggle" title="Mark OCR that invents text not present in the source image">
-            <input type="checkbox" id="preview-fabricated-result" disabled> Fabricated result
+            <input type="checkbox" id="preview-fabricated-result" disabled> Hallucinated result
           </label>
           <label class="reading-size-control" for="preview-reading-size">Text size
             <select id="preview-reading-size" data-reading-size aria-label="Review text size">
@@ -322,7 +321,7 @@
           <h2 class="compare-title">Select a page to compare its scan and text.</h2>
           <span class="compare-conf dim"></span>
           <label class="fabricated-toggle" title="Mark OCR that invents text not present in the source image">
-            <input type="checkbox" id="history-fabricated-result" disabled> Fabricated result
+            <input type="checkbox" id="history-fabricated-result" disabled> Hallucinated result
           </label>
           <label class="reading-size-control" for="history-reading-size">Text size
             <select id="history-reading-size" data-reading-size aria-label="History text size">

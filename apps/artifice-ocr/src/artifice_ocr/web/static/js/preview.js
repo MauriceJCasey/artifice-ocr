@@ -82,9 +82,6 @@ const PreviewTab = (function () {
     });
   }
 
-  // Not autosaved on every keystroke — a scan-correction session is a
-  // deliberate, occasional action, not a live-typing document, so saving
-  // only happens on the button click or Ctrl+S.
   // Every Review re-render goes through here. The page picker already names
   // the file, so the heading carries the Tropy item title instead, or steps
   // aside when there isn't one.
@@ -98,6 +95,9 @@ const PreviewTab = (function () {
     wireCrossHighlight(container);
   }
 
+  // Not autosaved on every keystroke — a scan-correction session is a
+  // deliberate, occasional action, not a live-typing document, so saving
+  // only happens on the button click or Ctrl+S.
   async function savePaneText(key) {
     const textarea = getPaneTextarea(key);
     const btn = paneConfigs[key].btn;
@@ -150,7 +150,7 @@ const PreviewTab = (function () {
     fabricatedToggle.disabled = true;
     try {
       await api("POST", `/api/queue/${currentItemId}/fabricated-result`, { fabricated: requested });
-      log(requested ? "Marked as a fabricated OCR result." : "Removed fabricated-result mark.", "accent");
+      log(requested ? "Marked as a hallucinated OCR result." : "Removed the hallucinated-result mark.", "accent");
     } catch (err) {
       fabricatedToggle.checked = !requested;
       log(`Could not save review flag: ${err.message}`, "error");
@@ -227,7 +227,7 @@ const PreviewTab = (function () {
           }
         }
       } catch {
-        // Non-404 error loading regions — fall back to whole-page view.
+        // Couldn't load regions: fall back to the whole-page view.
         reviewModeTabs.style.display = "none";
         if (comparePanes) comparePanes.style.display = "";
         regionListEl.style.display = "none";
@@ -480,7 +480,11 @@ const PreviewTab = (function () {
   // Refresh button in region list toolbar.
   document.getElementById("btn-region-refresh")?.addEventListener("click", async () => {
     if (currentItemId && window.RegionReview) {
-      await window.RegionReview.reload(currentItemId);
+      try {
+        await window.RegionReview.reload(currentItemId);
+      } catch (err) {
+        if (window.ArtificeToast) window.ArtificeToast.error("Could not refresh regions: " + err.message);
+      }
     }
   });
 

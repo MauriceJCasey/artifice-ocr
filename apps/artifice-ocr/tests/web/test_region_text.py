@@ -424,11 +424,13 @@ def test_get_regions_404_for_unknown_item(client):
     assert client.get("/api/queue/does-not-exist/regions").status_code == 404
 
 
-def test_get_regions_404_without_page(client, tmp_path):
+def test_get_regions_is_empty_without_page(client, tmp_path):
+    # No PAGE document is the normal no-segmentation case, not an error: a 404
+    # here put a red console error on every Review open.
     item_id = _add_item_and_set_output(tmp_path)  # no PAGE document written
     res = client.get(f"/api/queue/{item_id}/regions")
-    assert res.status_code == 404
-    assert "PAGE" in res.json()["detail"]
+    assert res.status_code == 200
+    assert res.json() == {"reading_order": [], "regions": []}
 
 
 # --------------------------------------------------------------------------- #

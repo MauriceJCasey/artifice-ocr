@@ -122,7 +122,7 @@ const HistoryTab = (function () {
         <td>${escapeHtml(r.state)}</td>
         <td>${escapeHtml(r.language || "\u2014")}</td>
         <td class="c">${r.confidence ?? "\u2014"}</td>
-        <td>${r.fabricated_result ? '<span class="fabricated-badge">Fabricated</span>' : "\u2014"}</td>
+        <td>${r.fabricated_result ? '<span class="fabricated-badge">Hallucinated</span>' : "\u2014"}</td>
       </tr>`).join("") || `<tr><td colspan="5" class="table-empty-cell"><span class="panel-empty-title">No documents.</span><span class="panel-empty-desc">Select a run from the table above to view its documents.</span></td></tr>`;
 
     itemsBody.querySelectorAll("tr[data-id]").forEach((tr) => {
@@ -406,7 +406,7 @@ const HistoryTab = (function () {
   document.getElementById("btn-history-refresh").onclick = refresh;
   document.getElementById("btn-history-export-fabricated")?.addEventListener("click", async () => {
     try {
-      await downloadFile("/api/history/fabricated-results", "fabricated-ocr-results.json");
+      await downloadFile("/api/history/fabricated-results", "hallucinated-ocr-results.json");
     } catch (err) {
       if (window.ArtificeToast) window.ArtificeToast.error(`Could not export flagged OCR: ${err.message}`);
     }
@@ -426,7 +426,7 @@ const HistoryTab = (function () {
       const data = await api("POST", `/api/history/items/${currentItemId}/fabricated-result`, { fabricated: requested });
       const row = itemsBody.querySelector(`tr[data-id="${currentItemId}"]`);
       if (row) row.lastElementChild.innerHTML = data.fabricated_result
-        ? '<span class="fabricated-badge">Fabricated</span>' : "\u2014";
+        ? '<span class="fabricated-badge">Hallucinated</span>' : "\u2014";
       if (window.ArtificeToast) window.ArtificeToast.success(requested ? "Review flag saved." : "Review flag removed.");
     } catch (err) {
       fabricatedToggle.checked = !requested;

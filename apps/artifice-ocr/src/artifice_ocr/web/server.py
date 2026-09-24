@@ -153,7 +153,13 @@ def index() -> HTMLResponse:
 @_core_router.get("/about", response_class=HTMLResponse)
 def about() -> HTMLResponse:
     return HTMLResponse(
-        _render("about.html", active_tab="about", show_inspector=False, show_activity=False)
+        _render(
+            "about.html",
+            active_tab="about",
+            page_title="About",
+            show_inspector=False,
+            show_activity=False,
+        )
     )
 
 
@@ -179,7 +185,7 @@ _BYOM_PREVIEW_APPS = (
 # endpoint only, per the docstring on ``recommendations_for_app``).
 
 _BYOM_PREVIEW_APP_NAMES = {
-    "artifice-ocr": "ArtificeOCR",
+    "artifice-ocr": "Artifice OCR",
     "artifice-draft": "Draft",
     "artifice-graph": "Knowledge Graph",
     "artifice-transcribe": "Transcribe",
@@ -458,7 +464,7 @@ def create_app(
     runtime_state: RunState | None = None,
     pdf_export_state: PdfExportState | None = None,
 ) -> FastAPI:
-    """Build an ArtificeOCR FastAPI app, wired to injectable state.
+    """Build an Artifice OCR FastAPI app, wired to injectable state.
 
     Callers that pass an explicit RunState/PdfExportState (e.g. a test
     fixture's own fresh instance) get every router module that references
@@ -495,7 +501,7 @@ def create_app(
     tropy_notes_router.state = rs
     pdf_export_router.pdf_export_state = pes
 
-    new_app = FastAPI(title="ArtificeOCR")
+    new_app = FastAPI(title="Artifice OCR")
     new_app.add_middleware(
         CORSMiddleware,
         allow_origins=_cors_origins,
@@ -566,13 +572,13 @@ def _start_server_thread(port: int):
 
 
 def _report_startup_failure(port: int, thread, errors: list[BaseException]) -> None:
-    report_startup_failure("ArtificeOCR", port, thread, errors)
+    report_startup_failure("Artifice OCR", port, thread, errors)
 
 
 def _report_window_failure(reason: str) -> None:
     """Tell desktop users why the native window could not be opened."""
     message = (
-        "ArtificeOCR could not open its desktop window.\n\n"
+        "Artifice OCR could not open its desktop window.\n\n"
         f"{reason}\n\n"
         "The browser fallback is disabled."
     )
@@ -583,7 +589,7 @@ def _report_window_failure(reason: str) -> None:
 
         root = tk.Tk()
         root.withdraw()
-        messagebox.showerror("ArtificeOCR — window unavailable", message)
+        messagebox.showerror("Artifice OCR — window unavailable", message)
         root.destroy()
     except Exception:
         pass
@@ -648,7 +654,7 @@ def main() -> None:
     # ── Discovery: register this running instance for handoff ──────────
     # ── Server-only mode (--no-window) ────────────────────────────────────
     if args.no_window:
-        print(f"ArtificeOCR running at {url}  (Ctrl+C to stop)", flush=True)
+        print(f"Artifice OCR running at {url}  (Ctrl+C to stop)", flush=True)
         with contextlib.suppress(KeyboardInterrupt):
             server_thread.join()
         return
@@ -658,7 +664,7 @@ def main() -> None:
     from .window import open_native_window  # noqa: PLC0415
 
     try:
-        result = open_native_window(url, title="ArtificeOCR")
+        result = open_native_window(url, title="Artifice OCR")
         if result.opened:
             # Window closed by user — exit cleanly.
             # The daemon server thread dies with the process.

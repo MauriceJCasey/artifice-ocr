@@ -354,7 +354,13 @@ def get_regions_route(item_id: str) -> dict:
     item = state.get(item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found in the queue")
-    page = _load_item_page(item)
+    page = load_page(_item_output_dir(), item.stem)
+    if page is None:
+        # No PAGE document is the normal case for any item processed without
+        # segmentation (the default), so it's an empty result, not an error.
+        # A 404 here is reserved for an item that isn't in the queue; the
+        # routes that edit regions still 404, since there's nothing to edit.
+        return {"reading_order": [], "regions": []}
     errors = _region_errors(page)
     regions = [
         {

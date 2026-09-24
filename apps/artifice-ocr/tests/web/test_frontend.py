@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 def test_index_serves_the_frontend(client):
     res = client.get("/")
     assert res.status_code == 200
-    assert "ArtificeOCR" in res.text
+    assert "Artifice OCR" in res.text
     assert "shell-skip" in res.text
     assert "app-shell" in res.text
     assert 'id="image-viewport"' in res.text
@@ -27,7 +27,7 @@ def test_index_serves_the_frontend(client):
 def test_about_page_serves(client):
     res = client.get("/about")
     assert res.status_code == 200
-    assert "About ArtificeOCR" in res.text
+    assert "About Artifice OCR" in res.text
     assert "app-shell" in res.text
 
 
