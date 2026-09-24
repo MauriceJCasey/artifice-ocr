@@ -161,6 +161,9 @@ jobs:
             (
               cd "dist/artifice-ocr-$os"
               if [ "$os" = "Linux" ]; then
+                # Artifact transfer drops the executable bit; without this the
+                # extracted ./artifice-ocr says "Permission denied".
+                chmod +x ./artifice-ocr
                 tar -czf "$GITHUB_WORKSPACE/artifice-ocr-Linux-$VER.tar.gz" .
               else
                 zip -qr "$GITHUB_WORKSPACE/artifice-ocr-Windows-$VER.zip" .
@@ -174,6 +177,9 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
+          # This job never checks out the repository, so `gh` has no git
+          # remote to infer it from ("not a git repository").
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           VER="${{ github.ref_name }}"
