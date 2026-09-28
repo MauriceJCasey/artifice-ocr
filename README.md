@@ -25,7 +25,7 @@ in mind, and is particularly attuned to olmOCR-2. Nothing leaves your machine un
 it at a remote API yourself.
 
 **⚠️ Active development, early stage.** Expect rough edges. This is for people comfortable
-troubleshooting local models.
+troubleshooting local models. I run a number of deterministic security tests on every release, but you should be cautious whenever you run public code. At the end of the day, I'm just a lone nerd and do not have the experience or skills that underpin commercial software releases.
 
 ## What it does
 
